@@ -35,71 +35,613 @@ PDF_CACHE_DIR = "pdf_cache"  # downloaded PDFs are cached here
 
 # ─── South Africa ───────────────────────────────────────────────────
 ZA_ACTS = [
-    # MINIMAL — just provide the PDF; Ollama extracts everything else:
-    # {
-    #     "source": "file",
-    #     "path": "./Insurance-Act-No--18-of-2017.pdf",
-    #     "short_name": "IA",
-    # },
-    #
-    # WITH URL — Ollama still extracts act_number, dates, description:
-    # {
-    #     "source": "url",
-    #     "url": "https://www.gov.za/sites/default/files/gcis_document/201409/act68of2008.pdf",
-    #     "short_name": "CPA",
-    #     "category": "consumer",   # optional override
-    # },
-    #
-    # FULLY SPECIFIED — skip LLM metadata extraction entirely:
-    # {
-    #     "source": "file",
-    #     "path": "./pdfs/za/insurance_act_18_of_2017.pdf",
-    #     "short_name": "IA",
-    #     "act_number": "18 of 2017",
-    #     "category": "insurance",
-    #     "effective_date": "2018-07-01",
-    #     "description": "Regulates the insurance industry in South Africa.",
-    # },
+    # ── Insurance ──────────────────────────────────────────────────
+    {
+        "source": "url",
+        "url": "https://www.gov.za/sites/default/files/gcis_document/201801/41388gon32insuranceact2017.pdf",
+        "short_name": "IA",
+        "act_number": "18 of 2017",
+        "category": "insurance",
+        "effective_date": "2018-07-01",
+    },
+    {
+        "source": "url",
+        "url": "https://www.gov.za/sites/default/files/gcis_document/201409/a53-98.pdf",
+        "short_name": "STIA",
+        "act_number": "53 of 1998",
+        "category": "insurance",
+        "effective_date": "1999-01-01",
+    },
+    {
+        "source": "url",
+        "url": "https://www.gov.za/sites/default/files/gcis_document/201409/a52-98.pdf",
+        "short_name": "LTIA",
+        "act_number": "52 of 1998",
+        "category": "insurance",
+        "effective_date": "1999-01-01",
+    },
+    # ── Consumer ───────────────────────────────────────────────────
+    {
+        "source": "url",
+        "url": "https://www.gov.za/sites/default/files/32186_467.pdf",
+        "short_name": "CPA",
+        "act_number": "68 of 2008",
+        "category": "consumer",
+        "effective_date": "2011-03-31",
+    },
+    {
+        "source": "url",
+        "url": "https://www.gov.za/sites/default/files/gcis_document/201409/3706726-11act4of2013protectionofpersonalinforcorrect.pdf",
+        "short_name": "POPIA",
+        "act_number": "4 of 2013",
+        "category": "consumer",
+        "effective_date": "2020-07-01",
+    },
+    # ── Employment ─────────────────────────────────────────────────
+    {
+        "source": "url",
+        "url": "https://www.gov.za/sites/default/files/gcis_document/201409/act66-1995labourrelations.pdf",
+        "short_name": "LRA",
+        "act_number": "66 of 1995",
+        "category": "employment",
+        "effective_date": "1996-11-11",
+    },
+    {
+        "source": "url",
+        "url": "https://www.gov.za/sites/default/files/gcis_document/201409/a75-97.pdf",
+        "short_name": "BCEA",
+        "act_number": "75 of 1997",
+        "category": "employment",
+        "effective_date": "1998-12-01",
+    },
+    {
+        "source": "url",
+        "url": "https://www.gov.za/sites/default/files/gcis_document/201409/a55-98ocr.pdf",
+        "short_name": "EEA",
+        "act_number": "55 of 1998",
+        "category": "employment",
+        "effective_date": "1999-08-09",
+    },
+    # ── Credit ─────────────────────────────────────────────────────
+    {
+        "source": "url",
+        "url": "https://www.justice.gov.za/mc/vnbp/act2005-034.pdf",
+        "short_name": "NCA",
+        "act_number": "34 of 2005",
+        "category": "credit",
+        "effective_date": "2006-06-01",
+    },
+    # ── Rental ─────────────────────────────────────────────────────
+    {
+        "source": "url",
+        "url": "https://www.gov.za/sites/default/files/gcis_document/201409/a50-99.pdf",
+        "short_name": "RHA",
+        "act_number": "50 of 1999",
+        "category": "rental",
+        "effective_date": "2000-08-01",
+    },
+    # ── General ────────────────────────────────────────────────────
+    {
+        "source": "url",
+        "url": "https://www.gov.za/sites/default/files/gcis_document/201708/4106022-8act9of2017finansectorregulationa.pdf",
+        "short_name": "FSRA",
+        "act_number": "9 of 2017",
+        "category": "general",
+        "effective_date": "2018-04-01",
+    },
+    {
+        "source": "url",
+        "url": "https://www.gov.za/sites/default/files/images/a108-96.pdf",
+        "short_name": "CON",
+        "act_number": "108 of 1996",
+        "category": "general",
+        "effective_date": "1997-02-04",
+    },
 ]
 
 # ─── United Kingdom ─────────────────────────────────────────────────
 GB_ACTS = [
-    # Minimal — Ollama extracts act_number, dates, description:
-    # {
-    #     "source": "url",
-    #     "url": "https://www.legislation.gov.uk/ukpga/2015/15/data.pdf",
-    #     "short_name": "CRA",
-    # },
+    # ── Insurance ──────────────────────────────────────────────────
+    {
+        "source": "url",
+        "url": "https://www.legislation.gov.uk/ukpga/2000/8/data.pdf",
+        "short_name": "FSMA",
+        "act_number": "2000 c.8",
+        "category": "insurance",
+        "effective_date": "2000-06-14",
+    },
+    {
+        "source": "url",
+        "url": "https://www.legislation.gov.uk/ukpga/2015/4/data.pdf",
+        "short_name": "IA",
+        "act_number": "2015 c.4",
+        "category": "insurance",
+        "effective_date": "2015-02-12",
+    },
+    # ── Consumer ───────────────────────────────────────────────────
+    {
+        "source": "url",
+        "url": "https://www.legislation.gov.uk/ukpga/2015/15/data.pdf",
+        "short_name": "CRA",
+        "act_number": "2015 c.15",
+        "category": "consumer",
+        "effective_date": "2015-03-26",
+    },
+    {
+        "source": "url",
+        "url": "https://www.legislation.gov.uk/ukpga/1987/43/data.pdf",
+        "short_name": "CPA",
+        "act_number": "1987 c.43",
+        "category": "consumer",
+        "effective_date": "1987-05-15",
+    },
+    # ── Employment ─────────────────────────────────────────────────
+    {
+        "source": "url",
+        "url": "https://www.legislation.gov.uk/ukpga/1996/18/data.pdf",
+        "short_name": "ERA",
+        "act_number": "1996 c.18",
+        "category": "employment",
+        "effective_date": "1996-05-22",
+    },
+    {
+        "source": "url",
+        "url": "https://www.legislation.gov.uk/ukpga/2010/15/data.pdf",
+        "short_name": "EA",
+        "act_number": "2010 c.15",
+        "category": "employment",
+        "effective_date": "2010-04-08",
+    },
+    {
+        "source": "url",
+        "url": "https://www.legislation.gov.uk/ukpga/1998/39/data.pdf",
+        "short_name": "NMWA",
+        "act_number": "1998 c.39",
+        "category": "employment",
+        "effective_date": "1998-07-31",
+    },
+    # ── Credit ─────────────────────────────────────────────────────
+    {
+        "source": "url",
+        "url": "https://www.legislation.gov.uk/ukpga/1974/39/data.pdf",
+        "short_name": "CCA",
+        "act_number": "1974 c.39",
+        "category": "credit",
+        "effective_date": "1974-07-31",
+    },
+    {
+        "source": "url",
+        "url": "https://www.legislation.gov.uk/ukpga/2012/21/data.pdf",
+        "short_name": "FSA",
+        "act_number": "2012 c.21",
+        "category": "credit",
+        "effective_date": "2012-12-19",
+    },
+    # ── Rental ─────────────────────────────────────────────────────
+    {
+        "source": "url",
+        "url": "https://www.legislation.gov.uk/ukpga/1988/50/data.pdf",
+        "short_name": "HA",
+        "act_number": "1988 c.50",
+        "category": "rental",
+        "effective_date": "1988-11-15",
+    },
+    {
+        "source": "url",
+        "url": "https://www.legislation.gov.uk/ukpga/1985/70/data.pdf",
+        "short_name": "LTA",
+        "act_number": "1985 c.70",
+        "category": "rental",
+        "effective_date": "1985-10-30",
+    },
+    {
+        "source": "url",
+        "url": "https://www.legislation.gov.uk/ukpga/2025/26/data.pdf",
+        "short_name": "RRA",
+        "act_number": "2025 c.26",
+        "category": "rental",
+        "effective_date": "2025-10-27",
+    },
+    # ── General ────────────────────────────────────────────────────
+    {
+        "source": "url",
+        "url": "https://www.legislation.gov.uk/ukpga/2018/12/data.pdf",
+        "short_name": "DPA",
+        "act_number": "2018 c.12",
+        "category": "general",
+        "effective_date": "2018-05-23",
+    },
+    {
+        "source": "url",
+        "url": "https://www.legislation.gov.uk/ukpga/1998/42/data.pdf",
+        "short_name": "HRA",
+        "act_number": "1998 c.42",
+        "category": "general",
+        "effective_date": "1998-11-09",
+    },
 ]
 
 # ─── United States ──────────────────────────────────────────────────
 US_ACTS = [
-    # Minimal — Ollama extracts act_number, dates, description:
-    # {
-    #     "source": "url",
-    #     "url": "https://www.govinfo.gov/content/pkg/PLAW-111publ203/pdf/PLAW-111publ203.pdf",
-    #     "short_name": "TILA",
-    # },
+    # ── Insurance ──────────────────────────────────────────────────
+    {
+        "source": "url",
+        "url": "https://www.govinfo.gov/content/pkg/PLAW-111publ148/pdf/PLAW-111publ148.pdf",
+        "short_name": "ACA",
+        "act_number": "Pub.L. 111-148",
+        "category": "insurance",
+        "effective_date": "2010-03-23",
+    },
+    {
+        "source": "url",
+        "url": "https://www.govinfo.gov/content/pkg/STATUTE-82/pdf/STATUTE-82-Pg572.pdf",
+        "short_name": "NFIA",
+        "act_number": "Pub.L. 90-448",
+        "category": "insurance",
+        "effective_date": "1968-08-01",
+    },
+    {
+        "source": "url",
+        "url": "https://www.govinfo.gov/content/pkg/PLAW-107publ297/pdf/PLAW-107publ297.pdf",
+        "short_name": "TRIA",
+        "act_number": "Pub.L. 107-297",
+        "category": "insurance",
+        "effective_date": "2002-11-26",
+    },
+    # ── Consumer ───────────────────────────────────────────────────
+    {
+        "source": "url",
+        "url": "https://www.govinfo.gov/content/pkg/PLAW-111publ203/pdf/PLAW-111publ203.pdf",
+        "short_name": "CFPA",
+        "act_number": "Pub.L. 111-203",
+        "category": "consumer",
+        "effective_date": "2010-07-21",
+    },
+    {
+        "source": "url",
+        "url": "https://www.govinfo.gov/content/pkg/STATUTE-38/pdf/STATUTE-38-Pg717.pdf",
+        "short_name": "FTCA",
+        "act_number": "Pub.L. 63-311",
+        "category": "consumer",
+        "effective_date": "1914-09-26",
+    },
+    # ── Employment ─────────────────────────────────────────────────
+    {
+        "source": "url",
+        "url": "https://www.govinfo.gov/content/pkg/COMPS-1514/pdf/COMPS-1514.pdf",
+        "short_name": "FLSA",
+        "act_number": "Pub.L. 75-718",
+        "category": "employment",
+        "effective_date": "1938-06-25",
+    },
+    {
+        "source": "url",
+        "url": "https://www.govinfo.gov/content/pkg/STATUTE-78/pdf/STATUTE-78-Pg241.pdf",
+        "short_name": "CRA64",
+        "act_number": "Pub.L. 88-352",
+        "category": "employment",
+        "effective_date": "1964-07-02",
+    },
+    {
+        "source": "url",
+        "url": "https://www.govinfo.gov/content/pkg/STATUTE-104/pdf/STATUTE-104-Pg327.pdf",
+        "short_name": "ADA",
+        "act_number": "Pub.L. 101-336",
+        "category": "employment",
+        "effective_date": "1990-07-26",
+    },
+    {
+        "source": "url",
+        "url": "https://www.govinfo.gov/content/pkg/COMPS-1832/pdf/COMPS-1832.pdf",
+        "short_name": "FMLA",
+        "act_number": "Pub.L. 103-3",
+        "category": "employment",
+        "effective_date": "1993-02-05",
+    },
+    # ── Credit ─────────────────────────────────────────────────────
+    {
+        "source": "url",
+        "url": "https://www.govinfo.gov/content/pkg/STATUTE-84/pdf/STATUTE-84-Pg1114.pdf",
+        "short_name": "FCRA",
+        "act_number": "Pub.L. 91-508",
+        "category": "credit",
+        "effective_date": "1970-10-26",
+    },
+    {
+        "source": "url",
+        "url": "https://www.govinfo.gov/content/pkg/STATUTE-82/pdf/STATUTE-82-Pg146.pdf",
+        "short_name": "TILA",
+        "act_number": "Pub.L. 90-321",
+        "category": "credit",
+        "effective_date": "1968-05-29",
+    },
+    {
+        "source": "url",
+        "url": "https://www.govinfo.gov/content/pkg/STATUTE-88/pdf/STATUTE-88-Pg1500.pdf",
+        "short_name": "ECOA",
+        "act_number": "Pub.L. 93-495",
+        "category": "credit",
+        "effective_date": "1974-10-28",
+    },
+    {
+        "source": "url",
+        "url": "https://www.govinfo.gov/content/pkg/PLAW-111publ203/pdf/PLAW-111publ203.pdf",
+        "short_name": "DFA",
+        "act_number": "Pub.L. 111-203",
+        "category": "credit",
+        "effective_date": "2010-07-21",
+    },
+    # ── Rental ─────────────────────────────────────────────────────
+    {
+        "source": "url",
+        "url": "https://www.govinfo.gov/content/pkg/COMPS-343/pdf/COMPS-343.pdf",
+        "short_name": "FHA",
+        "act_number": "Pub.L. 90-284",
+        "category": "rental",
+        "effective_date": "1968-04-11",
+    },
+    # ── General ────────────────────────────────────────────────────
+    {
+        "source": "url",
+        "url": "https://www.govinfo.gov/content/pkg/STATUTE-80/pdf/STATUTE-80-Pg250.pdf",
+        "short_name": "FOIA",
+        "act_number": "Pub.L. 89-487",
+        "category": "general",
+        "effective_date": "1966-07-04",
+    },
+    {
+        "source": "url",
+        "url": "https://www.govinfo.gov/content/pkg/STATUTE-88/pdf/STATUTE-88-Pg1896.pdf",
+        "short_name": "PA",
+        "act_number": "Pub.L. 93-579",
+        "category": "general",
+        "effective_date": "1974-12-31",
+    },
 ]
 
 # ─── Australia ──────────────────────────────────────────────────────
 AU_ACTS = [
-    # Minimal — Ollama extracts act_number, dates, description:
-    # {
-    #     "source": "url",
-    #     "url": "https://www.legislation.gov.au/C2004A00109/latest/download",
-    #     "short_name": "CCA",
-    # },
+    # ── Insurance ──────────────────────────────────────────────────
+    {
+        "source": "url",
+        "url": "https://www.legislation.gov.au/C1973A00076/latest/download",
+        "short_name": "IA",
+        "act_number": "No. 76 of 1973",
+        "category": "insurance",
+        "effective_date": "1973-06-19",
+    },
+    {
+        "source": "url",
+        "url": "https://www.legislation.gov.au/C2004A02944/latest/download",
+        "short_name": "ICA",
+        "act_number": "No. 80 of 1984",
+        "category": "insurance",
+        "effective_date": "1986-01-01",
+    },
+    {
+        "source": "url",
+        "url": "https://www.legislation.gov.au/C2004A04860/latest/download",
+        "short_name": "LIA",
+        "act_number": "No. 4 of 1995",
+        "category": "insurance",
+        "effective_date": "1995-07-01",
+    },
+    {
+        "source": "url",
+        "url": "https://www.legislation.gov.au/C2004A00101/latest/download",
+        "short_name": "HIA",
+        "act_number": "No. 42 of 1974",
+        "category": "insurance",
+        "effective_date": "1974-08-08",
+    },
+    # ── Consumer ───────────────────────────────────────────────────
+    {
+        "source": "url",
+        "url": "https://www.legislation.gov.au/C2004A00109/latest/download",
+        "short_name": "CCA",
+        "act_number": "No. 51 of 1974",
+        "category": "consumer",
+        "effective_date": "2011-01-01",
+    },
+    {
+        "source": "url",
+        "url": "https://www.legislation.gov.au/C2004A00819/latest/download",
+        "short_name": "ASIC",
+        "act_number": "No. 51 of 2001",
+        "category": "consumer",
+        "effective_date": "2001-07-15",
+    },
+    # ── Employment ─────────────────────────────────────────────────
+    {
+        "source": "url",
+        "url": "https://www.legislation.gov.au/C2009A00028/latest/download",
+        "short_name": "FWA",
+        "act_number": "No. 28 of 2009",
+        "category": "employment",
+        "effective_date": "2009-07-01",
+    },
+    {
+        "source": "url",
+        "url": "https://www.legislation.gov.au/C2011A00137/latest/download",
+        "short_name": "WHS",
+        "act_number": "No. 137 of 2011",
+        "category": "employment",
+        "effective_date": "2012-01-01",
+    },
+    {
+        "source": "url",
+        "url": "https://www.legislation.gov.au/C2004A03332/latest/download",
+        "short_name": "WGEA",
+        "act_number": "No. 91 of 1986",
+        "category": "employment",
+        "effective_date": "2012-06-06",
+    },
+    # ── Credit ─────────────────────────────────────────────────────
+    {
+        "source": "url",
+        "url": "https://www.legislation.gov.au/C2009A00134/latest/download",
+        "short_name": "NCCP",
+        "act_number": "No. 134 of 2009",
+        "category": "credit",
+        "effective_date": "2010-07-01",
+    },
+    {
+        "source": "url",
+        "url": "https://www.legislation.gov.au/C1959A00006/latest/download",
+        "short_name": "BA",
+        "act_number": "No. 6 of 1959",
+        "category": "credit",
+        "effective_date": "1959-07-01",
+    },
+    # ── General ────────────────────────────────────────────────────
+    {
+        "source": "url",
+        "url": "https://www.legislation.gov.au/C2004A03712/latest/download",
+        "short_name": "PA",
+        "act_number": "No. 119 of 1988",
+        "category": "general",
+        "effective_date": "1989-01-01",
+    },
+    {
+        "source": "url",
+        "url": "https://www.legislation.gov.au/C2004A02562/latest/download",
+        "short_name": "FOI",
+        "act_number": "No. 3 of 1982",
+        "category": "general",
+        "effective_date": "1982-12-01",
+    },
+    # ── Rental (state-level — no federal PDF available) ────────────
+    # Residential Tenancies Act 2010 NSW: search legislation.nsw.gov.au
+    # Residential Tenancies Act 1997 VIC: search legislation.vic.gov.au
 ]
 
 # ─── India ──────────────────────────────────────────────────────────
 IN_ACTS = [
-    # Minimal — Ollama extracts act_number, dates, description:
-    # {
-    #     "source": "file",
-    #     "path": "./pdfs/in/insurance_act_1938.pdf",
-    #     "short_name": "IA1938",
-    # },
+    # ── Insurance ──────────────────────────────────────────────────
+    {
+        "source": "url",
+        "url": "https://www.indiacode.nic.in/bitstream/123456789/2304/1/a1938-04.pdf",
+        "short_name": "IA",
+        "act_number": "Act No. 4 of 1938",
+        "category": "insurance",
+        "effective_date": "1938-02-26",
+    },
+    {
+        "source": "url",
+        "url": "https://www.indiacode.nic.in/bitstream/123456789/1893/1/A1999_41.pdf",
+        "short_name": "IRDA",
+        "act_number": "Act No. 41 of 1999",
+        "category": "insurance",
+        "effective_date": "2000-04-19",
+    },
+    # ── Consumer ───────────────────────────────────────────────────
+    {
+        "source": "url",
+        "url": "https://www.indiacode.nic.in/bitstream/123456789/15256/1/a2019-35.pdf",
+        "short_name": "CPA",
+        "act_number": "Act No. 35 of 2019",
+        "category": "consumer",
+        "effective_date": "2020-07-20",
+    },
+    {
+        "source": "url",
+        "url": "https://www.indiacode.nic.in/bitstream/123456789/7052/1/consumer_protection_act_1986.pdf",
+        "short_name": "COPRA",
+        "act_number": "Act No. 68 of 1986",
+        "category": "consumer",
+        "effective_date": "1987-04-15",
+    },
+    # ── Employment ─────────────────────────────────────────────────
+    {
+        "source": "url",
+        "url": "https://www.indiacode.nic.in/bitstream/123456789/20352/1/the_industrial_disputes_act.pdf",
+        "short_name": "IDA",
+        "act_number": "Act No. 14 of 1947",
+        "category": "employment",
+        "effective_date": "1947-04-01",
+    },
+    {
+        "source": "url",
+        "url": "https://www.indiacode.nic.in/bitstream/123456789/19310/1/a1936-4.pdf",
+        "short_name": "PWA",
+        "act_number": "Act No. 4 of 1936",
+        "category": "employment",
+        "effective_date": "1937-03-28",
+    },
+    {
+        "source": "url",
+        "url": "https://www.indiacode.nic.in/bitstream/123456789/12828/1/the_employees_provident_funds_and_miscellaneous_provisions_act%2C_1952_no_19_of_1952_date_04.03.1952_.pdf",
+        "short_name": "EPF",
+        "act_number": "Act No. 19 of 1952",
+        "category": "employment",
+        "effective_date": "1952-03-04",
+    },
+    {
+        "source": "url",
+        "url": "https://www.indiacode.nic.in/bitstream/123456789/15793/1/A2019-29.pdf",
+        "short_name": "COW",
+        "act_number": "Act No. 29 of 2019",
+        "category": "employment",
+        "effective_date": "2019-08-08",
+    },
+    # ── Credit ─────────────────────────────────────────────────────
+    {
+        "source": "url",
+        "url": "https://www.indiacode.nic.in/bitstream/123456789/1885/1/aa1949-10.pdf",
+        "short_name": "BRA",
+        "act_number": "Act No. 10 of 1949",
+        "category": "credit",
+        "effective_date": "1949-03-16",
+    },
+    {
+        "source": "url",
+        "url": "https://www.indiacode.nic.in/bitstream/123456789/2398/1/a1934-2.pdf",
+        "short_name": "RBIA",
+        "act_number": "Act No. 2 of 1934",
+        "category": "credit",
+        "effective_date": "1935-01-01",
+    },
+    {
+        "source": "url",
+        "url": "https://www.indiacode.nic.in/bitstream/123456789/2006/1/A2002-54.pdf",
+        "short_name": "SARFA",
+        "act_number": "Act No. 54 of 2002",
+        "category": "credit",
+        "effective_date": "2002-06-21",
+    },
+    # ── Rental ─────────────────────────────────────────────────────
+    {
+        "source": "url",
+        "url": "https://www.indiacode.nic.in/bitstream/123456789/2158/1/a2016-16.pdf",
+        "short_name": "RERA",
+        "act_number": "Act No. 16 of 2016",
+        "category": "rental",
+        "effective_date": "2016-05-01",
+    },
+    {
+        "source": "url",
+        "url": "https://mohua.gov.in/upload/uploadfiles/files/Model-Tenancy-Act-English-02_06_2021.pdf",
+        "short_name": "MTA",
+        "category": "rental",
+        "effective_date": "2021-06-02",
+    },
+    # ── General ────────────────────────────────────────────────────
+    {
+        "source": "url",
+        "url": "https://www.indiacode.nic.in/bitstream/123456789/13116/1/it_act_2000_updated.pdf",
+        "short_name": "ITA",
+        "act_number": "Act No. 21 of 2000",
+        "category": "general",
+        "effective_date": "2000-10-17",
+    },
+    {
+        "source": "url",
+        "url": "https://www.indiacode.nic.in/bitstream/123456789/2065/1/A2005-22.pdf",
+        "short_name": "RTI",
+        "act_number": "Act No. 22 of 2005",
+        "category": "general",
+        "effective_date": "2005-10-12",
+    },
 ]
 
 # ─── Registry ──────────────────────────────────────────────────────
