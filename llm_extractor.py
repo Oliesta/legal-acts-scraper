@@ -60,6 +60,7 @@ METADATA_EXTRACTION_PROMPT = textwrap.dedent("""\
     Return ONLY a JSON object with these fields:
     {{
       "name": "Full formal name of the act (e.g. 'Insurance Act 18 of 2017')",
+      "actNumber": "Official act number (e.g. '18 of 2017', 'No. 51 of 1974'). Use the act number exactly as written.",
       "description": "2-3 sentence plain-language summary of what this act does",
       "effectiveDate": "YYYY-MM-DD if found, otherwise empty string",
       "lastAmended": "YYYY-MM-DD if found, otherwise empty string"
@@ -209,27 +210,35 @@ class LLMExtractor:
         cleaned = re.sub(r"^```(?:json)?\s*", "", cleaned)
         cleaned = re.sub(r"\s*```$", "", cleaned)
 
-        # Sometimes LLM adds text before/after the JSON array
         # Find the array boundaries
         arr_start = cleaned.find("[")
         arr_end = cleaned.rfind("]")
         if arr_start != -1 and arr_end != -1 and arr_end > arr_start:
             cleaned = cleaned[arr_start : arr_end + 1]
+        elif arr_start != -1:
+            # Truncated response — no closing bracket; salvage complete objects
+            cleaned = cleaned[arr_start:]
 
+        # Try to parse; on failure apply progressive repair strategies
+        sections = None
         try:
             sections = json.loads(cleaned)
         except json.JSONDecodeError:
-            # Try to fix common JSON issues
             try:
-                # Sometimes trailing commas
-                fixed = re.sub(r",\s*([}\]])", r"\1", cleaned)
-                sections = json.loads(fixed)
-            except json.JSONDecodeError as e:
-                console.print(f"    [red]JSON parse error: {e}[/red]")
-                return []
+                repaired = self._repair_json(cleaned)
+                sections = json.loads(repaired)
+            except json.JSONDecodeError:
+                # Last resort: extract individual complete JSON objects
+                sections = self._extract_json_objects(cleaned)
+                if not sections:
+                    console.print(f"    [red]JSON parse error: could not salvage any objects[/red]")
+                    return []
 
         if not isinstance(sections, list):
-            return []
+            if isinstance(sections, dict):
+                sections = [sections]
+            else:
+                return []
 
         valid = []
         for s in sections:
@@ -248,9 +257,71 @@ class LLMExtractor:
 
         return valid
 
+    @staticmethod
+    def _repair_json(text: str) -> str:
+        """Apply common JSON repair strategies for Ollama output."""
+        # Remove control characters that break JSON strings (except \t \n \r)
+        text = re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]", "", text)
+        # Fix invalid unicode escapes like \uXXXX that are not valid hex
+        text = re.sub(
+            r"\\u([0-9a-fA-F]{0,3}[^0-9a-fA-F])",
+            lambda m: "\\\\u" + m.group(1),
+            text,
+        )
+        # Remove trailing commas before ] or }
+        text = re.sub(r",\s*([}\]])", r"\1", text)
+        return text
+
+    @staticmethod
+    def _extract_json_objects(text: str) -> list[dict]:
+        """
+        Salvage complete JSON objects from a truncated/broken array string.
+        Walks the text char-by-char tracking brace depth to find complete {...} objects.
+        """
+        objects = []
+        depth = 0
+        start = None
+        in_string = False
+        escape_next = False
+
+        for i, ch in enumerate(text):
+            if escape_next:
+                escape_next = False
+                continue
+            if ch == "\\" and in_string:
+                escape_next = True
+                continue
+            if ch == '"':
+                in_string = not in_string
+                continue
+            if in_string:
+                continue
+            if ch == "{":
+                if depth == 0:
+                    start = i
+                depth += 1
+            elif ch == "}":
+                depth -= 1
+                if depth == 0 and start is not None:
+                    candidate = text[start : i + 1]
+                    try:
+                        obj = json.loads(candidate)
+                        if isinstance(obj, dict):
+                            objects.append(obj)
+                    except json.JSONDecodeError:
+                        try:
+                            obj = json.loads(re.sub(r",\s*([}\]])", r"\1", candidate))
+                            if isinstance(obj, dict):
+                                objects.append(obj)
+                        except json.JSONDecodeError:
+                            pass
+                    start = None
+
+        return objects
+
     def _parse_metadata_response(self, response: str) -> dict:
         """Parse metadata extraction response."""
-        defaults = {"name": "", "description": "", "effectiveDate": "", "lastAmended": ""}
+        defaults = {"name": "", "actNumber": "", "description": "", "effectiveDate": "", "lastAmended": ""}
         if not response:
             return defaults
 
@@ -265,10 +336,11 @@ class LLMExtractor:
             cleaned = cleaned[obj_start : obj_end + 1]
 
         try:
-            data = json.loads(cleaned)
+            data = json.loads(self._repair_json(cleaned))
             if isinstance(data, dict):
                 return {
                     "name": str(data.get("name", "")),
+                    "actNumber": str(data.get("actNumber", "")),
                     "description": str(data.get("description", "")),
                     "effectiveDate": str(data.get("effectiveDate", "")),
                     "lastAmended": str(data.get("lastAmended", "")),

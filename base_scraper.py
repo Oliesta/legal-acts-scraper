@@ -246,11 +246,13 @@ class BaseScraper:
         if not effective_date or not re.match(r"\d{4}-\d{2}-\d{2}", effective_date):
             effective_date = "2000-01-01"  # placeholder — user should fix
 
+        act_number = config.get("act_number") or config.get("short_name", "unknown")
+
         try:
             act = ActSchema(
                 name=name,
                 shortName=config["short_name"],
-                actNumber=config["act_number"],
+                actNumber=act_number,
                 country=self.country_code,
                 category=config["category"],
                 effectiveDate=effective_date,
@@ -300,16 +302,20 @@ class BaseScraper:
         # Step 4: Extract metadata if needed
         name = config.get("name", "")
         description = config.get("description", "")
-        if not name or not description:
+        needs_meta = not name or not description or not config.get("act_number") or not config.get("effective_date")
+        if needs_meta:
             console.print("  [dim]Extracting metadata from PDF...[/dim]")
             meta = self.llm.extract_metadata(raw_text)
             if not name:
-                name = meta.get("name") or f"{config['short_name']} {config['act_number']}"
+                name = meta.get("name") or ""
+            if not config.get("act_number") and meta.get("actNumber"):
+                config["act_number"] = meta["actNumber"]
             if not description:
                 description = meta.get("description", "")
-            # Use LLM-extracted dates if not in config
             if not config.get("effective_date") and meta.get("effectiveDate"):
                 config["effective_date"] = meta["effectiveDate"]
+        if not name:
+            name = f"{config['short_name']} {config.get('act_number', '')}".strip()
 
         # Step 5: Build and validate
         return self.build_act(config, name, sections, description)

@@ -14,6 +14,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import sys
 from pathlib import Path
 
@@ -56,20 +57,22 @@ def build_configs_from_folder(
 
     configs = []
     for pdf in pdfs:
-        # Derive short_name from filename
+        # Derive short_name as initials of meaningful words in the filename
         stem = pdf.stem
-        # "insurance_act_18_of_2017" → "IA_18_2017"
-        short = stem.upper()[:10].replace(" ", "_")
+        words = re.split(r"[\s\-_]+", stem)
+        # Take first letter of each word that's not a number and not a stop word
+        stop = {"of", "the", "and", "no", "act", "a", "an"}
+        initials = "".join(
+            w[0].upper() for w in words if w and w.lower() not in stop and not w.isdigit()
+        )
+        short = initials[:6] or stem[:6].upper()
 
         configs.append({
             "source": "file",
             "path": str(pdf),
             "short_name": short,
-            "act_number": "",       # LLM will extract
             "category": category,
-            "effective_date": "",    # LLM will extract
-            "description": "",      # LLM will extract
-            # name left empty — LLM will extract from PDF
+            # act_number, effective_date, description → extracted by LLM
         })
 
     return configs
