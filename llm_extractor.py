@@ -1,0 +1,315 @@
+"""
+Gemma-powered section extraction from raw PDF text.
+
+Sends text to local Ollama in chunks, asks Gemma to identify and extract
+each numbered section with its title and full content. Returns structured
+data matching SectionSchema.
+
+This is the primary extraction method — not a fallback. PDF text from
+legislation is too messy (multi-column, footnotes, headers/footers,
+amendment annotations) for reliable regex-based parsing.
+"""
+
+from __future__ import annotations
+
+import json
+import re
+import textwrap
+from typing import Optional
+
+import requests
+from rich.console import Console
+
+from config import CHUNK_OVERLAP, CHUNK_SIZE, DEFAULT_MODEL, OLLAMA_URL
+
+console = Console()
+
+# ── Prompts ─────────────────────────────────────────────────────────
+
+SECTION_EXTRACTION_PROMPT = textwrap.dedent("""\
+    You are a legal document parser. You will receive raw text extracted from a {country} legislation PDF.
+
+    Your task: identify every numbered section/clause and extract it as structured JSON.
+
+    For each section output:
+    {{
+      "sectionNumber": "Section 14" or "14(1)" — use the exact numbering from the text,
+      "title": "Short descriptive title for this section",
+      "content": "The FULL verbatim legal text of this section — include all subsections, paragraphs, provisos. Do NOT truncate."
+    }}
+
+    Rules:
+    - Include ALL sections you find, even short ones
+    - The "content" field must contain the COMPLETE text — every word, every subsection
+    - If a section has subsections like (a), (b), (c) — include them all in content
+    - Ignore page headers, footers, page numbers, gazette metadata
+    - Ignore the table of contents — only extract actual section text
+    - If text is cut off (chunk boundary), extract what you have — it will be merged later
+    - Section titles: if the act doesn't have explicit titles, create a brief descriptive one
+
+    Respond with ONLY a JSON array. No explanation, no markdown fences, no preamble.
+    If you find no sections in this chunk, respond with: []
+
+    TEXT:
+    {text}
+""")
+
+METADATA_EXTRACTION_PROMPT = textwrap.dedent("""\
+    You are a legal document parser. Extract metadata from this legislation PDF text.
+
+    Return ONLY a JSON object with these fields:
+    {{
+      "name": "Full formal name of the act (e.g. 'Insurance Act 18 of 2017')",
+      "description": "2-3 sentence plain-language summary of what this act does",
+      "effectiveDate": "YYYY-MM-DD if found, otherwise empty string",
+      "lastAmended": "YYYY-MM-DD if found, otherwise empty string"
+    }}
+
+    No explanation, no markdown fences.
+
+    TEXT (first 3000 chars):
+    {text}
+""")
+
+
+class LLMExtractor:
+    """Extract structured legal sections from raw PDF text using a local LLM."""
+
+    def __init__(
+        self,
+        model: str = DEFAULT_MODEL,
+        base_url: str = OLLAMA_URL,
+        chunk_size: int = CHUNK_SIZE,
+        chunk_overlap: int = CHUNK_OVERLAP,
+    ):
+        self.model = model
+        self.base_url = base_url
+        self.chunk_size = chunk_size
+        self.chunk_overlap = chunk_overlap
+
+    # ── Public API ──────────────────────────────────────────────────
+
+    def extract_sections(self, raw_text: str, country_code: str) -> list[dict]:
+        """
+        Extract all sections from PDF text.
+        Chunks the text and sends each chunk to Gemma, then merges results.
+        """
+        if not raw_text or len(raw_text.strip()) < 100:
+            console.print("  [red]PDF text too short or empty[/red]")
+            return []
+
+        chunks = self._chunk_text(raw_text)
+        console.print(f"  [dim]Split into {len(chunks)} chunk(s) for LLM processing[/dim]")
+
+        all_sections = []
+        for i, chunk in enumerate(chunks):
+            console.print(f"  [dim]Processing chunk {i+1}/{len(chunks)} ({len(chunk)} chars)...[/dim]")
+            prompt = SECTION_EXTRACTION_PROMPT.format(
+                country=country_code, text=chunk
+            )
+            result = self._call_ollama(prompt)
+            sections = self._parse_sections_response(result)
+            if sections:
+                all_sections.extend(sections)
+                console.print(f"    [cyan]Found {len(sections)} section(s)[/cyan]")
+
+        # Deduplicate sections that may appear in overlapping chunks
+        merged = self._deduplicate_sections(all_sections)
+        console.print(f"  [green]Total: {len(merged)} unique section(s)[/green]")
+        return merged
+
+    def extract_metadata(self, raw_text: str) -> dict:
+        """
+        Extract act metadata (name, description, dates) from the first part of the PDF.
+        Returns dict with name, description, effectiveDate, lastAmended.
+        """
+        # Only send the beginning of the doc for metadata
+        text_sample = raw_text[:3000]
+        prompt = METADATA_EXTRACTION_PROMPT.format(text=text_sample)
+        result = self._call_ollama(prompt)
+        return self._parse_metadata_response(result)
+
+    # ── Ollama communication ────────────────────────────────────────
+
+    def _call_ollama(self, prompt: str) -> str:
+        """Send prompt to Ollama and return response text."""
+        try:
+            resp = requests.post(
+                self.base_url,
+                json={
+                    "model": self.model,
+                    "prompt": prompt,
+                    "stream": False,
+                    "options": {
+                        "temperature": 0.1,
+                        "num_predict": 8192,
+                        "top_p": 0.9,
+                    },
+                },
+                timeout=180,  # LLM can be slow on large chunks
+            )
+            resp.raise_for_status()
+            return resp.json().get("response", "")
+        except requests.ConnectionError:
+            console.print(
+                "  [bold red]Cannot connect to Ollama![/bold red]\n"
+                "  Run: ollama serve"
+            )
+            return ""
+        except requests.Timeout:
+            console.print("  [red]Ollama request timed out (180s)[/red]")
+            return ""
+        except Exception as e:
+            console.print(f"  [red]Ollama error: {e}[/red]")
+            return ""
+
+    # ── Text chunking ───────────────────────────────────────────────
+
+    def _chunk_text(self, text: str) -> list[str]:
+        """
+        Split text into overlapping chunks, trying to break at section boundaries.
+        """
+        if len(text) <= self.chunk_size:
+            return [text]
+
+        chunks = []
+        start = 0
+        while start < len(text):
+            end = start + self.chunk_size
+
+            if end < len(text):
+                # Try to break at a section boundary
+                # Look for "Section \d+" or numbered headings near the end
+                search_zone = text[end - 500 : end + 500] if end + 500 < len(text) else text[end - 500:]
+                boundary = re.search(
+                    r"\n\s*(?:Section|SECTION|CHAPTER|PART)\s+\d+",
+                    search_zone,
+                )
+                if boundary:
+                    # Adjust end to break at the section boundary
+                    end = (end - 500) + boundary.start()
+
+            chunk = text[start:end]
+            chunks.append(chunk.strip())
+
+            # Move start forward, leaving overlap
+            start = end - self.chunk_overlap if end < len(text) else end
+
+        return [c for c in chunks if c]
+
+    # ── Response parsing ────────────────────────────────────────────
+
+    def _parse_sections_response(self, response: str) -> list[dict]:
+        """Parse LLM response into list of section dicts."""
+        if not response:
+            return []
+
+        # Strip markdown fences if present
+        cleaned = response.strip()
+        cleaned = re.sub(r"^```(?:json)?\s*", "", cleaned)
+        cleaned = re.sub(r"\s*```$", "", cleaned)
+
+        # Sometimes LLM adds text before/after the JSON array
+        # Find the array boundaries
+        arr_start = cleaned.find("[")
+        arr_end = cleaned.rfind("]")
+        if arr_start != -1 and arr_end != -1 and arr_end > arr_start:
+            cleaned = cleaned[arr_start : arr_end + 1]
+
+        try:
+            sections = json.loads(cleaned)
+        except json.JSONDecodeError:
+            # Try to fix common JSON issues
+            try:
+                # Sometimes trailing commas
+                fixed = re.sub(r",\s*([}\]])", r"\1", cleaned)
+                sections = json.loads(fixed)
+            except json.JSONDecodeError as e:
+                console.print(f"    [red]JSON parse error: {e}[/red]")
+                return []
+
+        if not isinstance(sections, list):
+            return []
+
+        valid = []
+        for s in sections:
+            if not isinstance(s, dict):
+                continue
+            if all(k in s for k in ("sectionNumber", "title", "content")):
+                sec_num = str(s["sectionNumber"]).strip()
+                title = str(s["title"]).strip()
+                content = str(s["content"]).strip()
+                if content and len(content) >= 10:
+                    valid.append({
+                        "sectionNumber": sec_num,
+                        "title": title,
+                        "content": content,
+                    })
+
+        return valid
+
+    def _parse_metadata_response(self, response: str) -> dict:
+        """Parse metadata extraction response."""
+        defaults = {"name": "", "description": "", "effectiveDate": "", "lastAmended": ""}
+        if not response:
+            return defaults
+
+        cleaned = response.strip()
+        cleaned = re.sub(r"^```(?:json)?\s*", "", cleaned)
+        cleaned = re.sub(r"\s*```$", "", cleaned)
+
+        # Find JSON object
+        obj_start = cleaned.find("{")
+        obj_end = cleaned.rfind("}")
+        if obj_start != -1 and obj_end != -1:
+            cleaned = cleaned[obj_start : obj_end + 1]
+
+        try:
+            data = json.loads(cleaned)
+            if isinstance(data, dict):
+                return {
+                    "name": str(data.get("name", "")),
+                    "description": str(data.get("description", "")),
+                    "effectiveDate": str(data.get("effectiveDate", "")),
+                    "lastAmended": str(data.get("lastAmended", "")),
+                }
+        except json.JSONDecodeError:
+            pass
+
+        return defaults
+
+    # ── Deduplication ───────────────────────────────────────────────
+
+    def _deduplicate_sections(self, sections: list[dict]) -> list[dict]:
+        """
+        Remove duplicate sections from overlapping chunks.
+        Keeps the version with the longest content.
+        """
+        by_number: dict[str, dict] = {}
+        for s in sections:
+            key = self._normalize_section_key(s["sectionNumber"])
+            existing = by_number.get(key)
+            if not existing or len(s["content"]) > len(existing["content"]):
+                by_number[key] = s
+
+        # Return in order of section number
+        result = list(by_number.values())
+        result.sort(key=lambda s: self._section_sort_key(s["sectionNumber"]))
+        return result
+
+    @staticmethod
+    def _normalize_section_key(sec_num: str) -> str:
+        """Normalize section number for dedup comparison."""
+        # Extract just the numbers: "Section 14(1)" → "14(1)"
+        m = re.search(r"(\d+(?:[A-Za-z])?(?:\(\d+\))?)", sec_num)
+        return m.group(1) if m else sec_num.lower().strip()
+
+    @staticmethod
+    def _section_sort_key(sec_num: str) -> tuple:
+        """Sort key for section numbers: Section 2 < Section 10 < Section 10A."""
+        m = re.search(r"(\d+)([A-Za-z])?", sec_num)
+        if m:
+            num = int(m.group(1))
+            suffix = m.group(2) or ""
+            return (num, suffix)
+        return (9999, sec_num)
