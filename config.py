@@ -25,7 +25,7 @@ USER_AGENT = (
 
 # ─── LLM settings ──────────────────────────────────────────────────
 OLLAMA_URL = "http://localhost:11434/api/generate"
-DEFAULT_MODEL = "gemma3"  # or "gemma3:12b" for better quality
+DEFAULT_MODEL = "llama3.2"  # or "llama3.2:latest"; use "llama3.1:8b" for better quality
 CHUNK_SIZE = 6000         # chars per LLM chunk (stay within context window)
 CHUNK_OVERLAP = 500       # overlap between chunks to avoid splitting sections
 

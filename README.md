@@ -1,6 +1,6 @@
 # Legal Acts Scraper (PDF-First)
 
-Python framework for extracting legal acts from PDF documents across ZA, GB, US, AU, and IN jurisdictions. Uses a local LLM (Gemma via Ollama) to parse PDF text into structured sections. Outputs JSON matching the Dala bulk-import schema.
+Python framework for extracting legal acts from PDF documents across ZA, GB, US, AU, and IN jurisdictions. Uses a local LLM (Llama via Ollama) to parse PDF text into structured sections. Outputs JSON matching the Dala bulk-import schema.
 
 ## Why PDF-first?
 
@@ -8,7 +8,7 @@ Most government legislation is published as PDF. Trying to parse HTML is fragile
 
 1. Downloads the PDF (or reads a local file you already have)
 2. Extracts raw text using a 4-layer stack (best → fallback)
-3. Sends text to a **local Gemma model** (via Ollama) to extract structured sections
+3. Sends text to a **local Llama model** (via Ollama) to extract structured sections
 4. Validates output against the Dala import schema
 5. Writes clean JSON ready for bulk import
 
@@ -33,9 +33,9 @@ Most government legislation is published as PDF. Trying to parse HTML is fragile
 # 1. Python deps
 pip install -r requirements.txt
 
-# 2. Ollama + Gemma
+# 2. Ollama + Llama
 curl -fsSL https://ollama.com/install.sh | sh
-ollama pull gemma3          # or gemma3:12b for better quality
+ollama pull llama3.2        # or llama3.1:8b for better quality
 ollama serve                # if not auto-started
 
 # 3. System PDF tools
@@ -57,7 +57,7 @@ pip install -r requirements.txt
 
 Download and run the installer from https://ollama.com/download, then:
 ```bat
-ollama pull gemma3
+ollama pull llama3.2
 ollama serve
 ```
 
@@ -105,7 +105,7 @@ python run_scraper.py --country ZA
 python run_scraper.py --all
 
 # Use a better model
-python run_scraper.py --country ZA --model gemma3:12b
+python run_scraper.py --country ZA --model llama3.1:8b
 
 # Process a folder of local PDFs
 python run_scraper.py --folder ./pdfs/za --country ZA --category insurance
@@ -185,5 +185,5 @@ git push origin main
 | Console window flashes on Windows | Fixed in current version — subprocess windows are suppressed |
 | `TesseractNotFoundError` | Install Tesseract; scraper auto-checks `C:\Program Files\Tesseract-OCR` |
 | `Cannot connect to Ollama` | Run `ollama serve` in a separate terminal |
-| `model 'gemma3' not found` | Run `ollama pull gemma3` |
+| `model 'llama3.2' not found` | Run `ollama pull llama3.2` |
 | `ValidationError: effectiveDate` | Add `"effective_date": "YYYY-MM-DD"` to the act config |
