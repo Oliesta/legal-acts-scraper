@@ -3,7 +3,7 @@ Base scraper: PDF download, text extraction, LLM orchestration.
 
 Handles:
   - Downloading PDFs from URLs (with caching)
-  - Extracting text via pdftotext / pypdf / OCR fallback
+  - Extracting text via pdftotext / pdfplumber / pypdf / OCR fallback
   - Coordinating with LLM extractor for section parsing
   - Schema validation and JSON output
 """
@@ -14,6 +14,7 @@ import json
 import os
 import re
 import subprocess
+import sys
 import time
 from pathlib import Path
 from typing import Optional
@@ -34,6 +35,19 @@ from llm_extractor import LLMExtractor
 from schema import ActSchema, SectionSchema
 
 console = Console()
+
+
+def _subprocess_kwargs() -> dict:
+    """
+    Return platform-specific kwargs for subprocess.run.
+    On Windows: suppress the console window that would otherwise flash.
+    """
+    if sys.platform != "win32":
+        return {}
+    si = subprocess.STARTUPINFO()
+    si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+    si.wShowWindow = subprocess.SW_HIDE
+    return {"startupinfo": si, "creationflags": subprocess.CREATE_NO_WINDOW}
 
 
 class BaseScraper:
@@ -122,15 +136,21 @@ class BaseScraper:
     def extract_text(self, pdf_path: Path) -> str:
         """
         Extract text from PDF. Tries methods in order:
-        1. pdftotext (layout mode — best for legislation)
-        2. pypdf (fallback)
-        3. OCR via pytesseract (for scanned PDFs)
+        1. pdftotext (layout mode — best for legislation, needs poppler)
+        2. pdfplumber (structured Python fallback — works on all platforms)
+        3. pypdf (basic Python fallback)
+        4. OCR via pytesseract (for scanned PDFs, needs tesseract + poppler)
         """
         text = self._extract_with_pdftotext(pdf_path)
         if text and len(text.strip()) > 200:
             return text
 
-        console.print("  [yellow]pdftotext returned little text, trying pypdf...[/yellow]")
+        console.print("  [yellow]pdftotext returned little text, trying pdfplumber...[/yellow]")
+        text = self._extract_with_pdfplumber(pdf_path)
+        if text and len(text.strip()) > 200:
+            return text
+
+        console.print("  [yellow]pdfplumber returned little text, trying pypdf...[/yellow]")
         text = self._extract_with_pypdf(pdf_path)
         if text and len(text.strip()) > 200:
             return text
@@ -149,16 +169,49 @@ class BaseScraper:
             result = subprocess.run(
                 ["pdftotext", "-layout", str(pdf_path), "-"],
                 capture_output=True,
-                text=True,
+                # Always decode as UTF-8; replace unmappable bytes rather than crash.
+                # Without this, Windows uses the system code page (e.g. cp1252) which
+                # raises UnicodeDecodeError on non-Latin characters.
+                encoding="utf-8",
+                errors="replace",
                 timeout=60,
+                **_subprocess_kwargs(),
             )
             if result.returncode == 0:
                 return self._clean_pdf_text(result.stdout)
         except FileNotFoundError:
-            console.print("  [dim]pdftotext not found, install poppler-utils[/dim]")
+            console.print(
+                "  [dim]pdftotext not found — install poppler "
+                "(Linux: apt install poppler-utils | "
+                "macOS: brew install poppler | "
+                "Windows: https://github.com/oschwartz10612/poppler-windows/releases)[/dim]"
+            )
         except subprocess.TimeoutExpired:
             console.print("  [red]pdftotext timed out[/red]")
         return ""
+
+    def _extract_with_pdfplumber(self, pdf_path: Path) -> str:
+        """
+        Extract using pdfplumber.
+        Pure Python — no system binaries required, works on all platforms.
+        Handles multi-column layouts better than pypdf.
+        """
+        try:
+            import pdfplumber
+
+            pages = []
+            with pdfplumber.open(str(pdf_path)) as pdf:
+                for i, page in enumerate(pdf.pages):
+                    text = page.extract_text()
+                    if text:
+                        pages.append(f"--- PAGE {i + 1} ---\n{text}")
+            return self._clean_pdf_text("\n\n".join(pages))
+        except ImportError:
+            console.print("  [dim]pdfplumber not installed (pip install pdfplumber)[/dim]")
+            return ""
+        except Exception as e:
+            console.print(f"  [red]pdfplumber error: {e}[/red]")
+            return ""
 
     def _extract_with_pypdf(self, pdf_path: Path) -> str:
         """Extract using pypdf."""
@@ -182,6 +235,21 @@ class BaseScraper:
             import pytesseract
             from PIL import Image
 
+            # On Windows, Tesseract is rarely in PATH — point to the default install location
+            # if the user hasn't added it manually.
+            if sys.platform == "win32":
+                import shutil
+                if not shutil.which("tesseract"):
+                    default_path = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+                    if os.path.exists(default_path):
+                        pytesseract.pytesseract.tesseract_cmd = default_path
+                    else:
+                        console.print(
+                            "  [dim]Tesseract not found. "
+                            "Download: https://github.com/UB-Mannheim/tesseract/wiki[/dim]"
+                        )
+                        return ""
+
             # Convert PDF pages to images
             img_dir = Path(PDF_CACHE_DIR) / "ocr_temp"
             img_dir.mkdir(parents=True, exist_ok=True)
@@ -193,8 +261,12 @@ class BaseScraper:
                 ],
                 capture_output=True,
                 timeout=120,
+                **_subprocess_kwargs(),
             )
             if result.returncode != 0:
+                console.print(
+                    "  [dim]pdftoppm not found — install poppler for OCR support[/dim]"
+                )
                 return ""
 
             # OCR each page image
@@ -209,7 +281,7 @@ class BaseScraper:
             return self._clean_pdf_text("\n\n".join(pages))
 
         except ImportError:
-            console.print("  [dim]pytesseract/Pillow not installed for OCR[/dim]")
+            console.print("  [dim]pytesseract/Pillow not installed (pip install pytesseract Pillow)[/dim]")
             return ""
         except Exception as e:
             console.print(f"  [red]OCR error: {e}[/red]")
