@@ -133,8 +133,10 @@ python auto_metadata.py --pdf ./pdfs/act.pdf --country ZA --write
 
 ### Clone the repo
 
+Always clone the active branch — `main` may be behind:
+
 ```bash
-git clone https://github.com/oliesta/legal-acts-scraper.git
+git clone -b claude/fix-windows-errors-readme-zPpSV https://github.com/oliesta/legal-acts-scraper.git
 cd legal-acts-scraper
 pip install -r requirements.txt
 ```
@@ -142,13 +144,13 @@ pip install -r requirements.txt
 ### Pull latest changes
 
 ```bash
-git pull origin main
+git pull origin claude/fix-windows-errors-readme-zPpSV
 ```
 
 ### Work on a feature or fix
 
 ```bash
-# Create a new branch
+# Create a new branch off the current one
 git checkout -b my-feature
 
 # Make your changes, then stage and commit
@@ -159,19 +161,11 @@ git commit -m "Add NZ jurisdiction config"
 git push -u origin my-feature
 ```
 
-### Keep your branch up to date with main
+### Keep your branch up to date
 
 ```bash
 git fetch origin
-git merge origin/main
-```
-
-### Merge back to main (after review)
-
-```bash
-git checkout main
-git merge my-feature
-git push origin main
+git merge origin/claude/fix-windows-errors-readme-zPpSV
 ```
 
 ---
