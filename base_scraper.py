@@ -91,7 +91,7 @@ class BaseScraper:
         os.makedirs(PDF_CACHE_DIR, exist_ok=True)
 
         # Cache filename based on short_name
-        cache_path = Path(PDF_CACHE_DIR) / f"{config['short_name']}.pdf"
+        cache_path = Path(PDF_CACHE_DIR) / f"{self.country_code}_{config['short_name']}.pdf"
         if cache_path.exists():
             console.print(f"  [dim]Using cached PDF: {cache_path}[/dim]")
             return cache_path
