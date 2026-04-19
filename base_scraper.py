@@ -298,6 +298,11 @@ class BaseScraper:
         text = re.sub(r"\n{4,}", "\n\n\n", text)
         # Remove common PDF artifacts
         text = re.sub(r"(?m)^.{0,5}(?:Government Gazette|Staatskoerant).*$", "", text)
+        # Normalise curly/smart quotes — SA Gazette PDFs encode "term" as ''term''
+        # (two U+2018/U+2019 curly singles). Collapse them to straight double quotes.
+        text = re.sub(r"\u2018{2}", '"', text)
+        text = re.sub(r"\u2019{2}", '"', text)
+        text = text.replace("\u2018", "'").replace("\u2019", "'")
         return text.strip()
 
     # ── Act building ────────────────────────────────────────────────
@@ -332,6 +337,12 @@ class BaseScraper:
                 description=desc,
                 sections=[SectionSchema(**s) for s in sections],
             )
+            # Populate applicableDocumentTypes from the act's category so RAG
+            # filtered retrieval works without manual per-section overrides.
+            cat = act.category
+            for section in act.sections:
+                if not section.applicableDocumentTypes:
+                    section.applicableDocumentTypes = [cat]
             return act
         except ValidationError as e:
             self.errors.append(
