@@ -158,7 +158,7 @@ class LLMExtractor:
                         "top_p": 0.9,
                     },
                 },
-                timeout=180,  # LLM can be slow on large chunks
+                timeout=300,  # CPU inference on large models can be slow
             )
             resp.raise_for_status()
             return resp.json().get("response", "")
