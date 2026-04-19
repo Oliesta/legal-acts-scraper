@@ -15,6 +15,7 @@ from __future__ import annotations
 import json
 import re
 import textwrap
+import time
 from typing import Optional
 
 import requests
@@ -104,15 +105,25 @@ class LLMExtractor:
 
         all_sections = []
         for i, chunk in enumerate(chunks):
-            console.print(f"  [dim]Processing chunk {i+1}/{len(chunks)} ({len(chunk)} chars)...[/dim]")
+            console.print(
+                f"  [dim]Chunk {i+1}/{len(chunks)} ({len(chunk):,} chars) — "
+                f"waiting for Ollama...[/dim]",
+                end="\r",
+            )
+            t0 = time.time()
             prompt = SECTION_EXTRACTION_PROMPT.format(
                 country=country_code, text=chunk
             )
             result = self._call_ollama(prompt)
+            elapsed = time.time() - t0
             sections = self._parse_sections_response(result)
+            found = len(sections)
+            console.print(
+                f"  [dim]Chunk {i+1}/{len(chunks)} ({len(chunk):,} chars) — "
+                f"{elapsed:.0f}s — [cyan]{found} section(s) found[/cyan][/dim]"
+            )
             if sections:
                 all_sections.extend(sections)
-                console.print(f"    [cyan]Found {len(sections)} section(s)[/cyan]")
 
         # Deduplicate sections that may appear in overlapping chunks
         merged = self._deduplicate_sections(all_sections)
