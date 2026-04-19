@@ -154,7 +154,7 @@ class LLMExtractor:
                     "stream": False,
                     "options": {
                         "temperature": 0.1,
-                        "num_predict": 8192,
+                        "num_predict": 16384,  # enough for a full JSON array from an 8K char chunk
                         "top_p": 0.9,
                     },
                 },

@@ -26,8 +26,8 @@ USER_AGENT = (
 # ─── LLM settings ──────────────────────────────────────────────────
 OLLAMA_URL = "http://localhost:11434/api/generate"
 DEFAULT_MODEL = "llama3.2"  # or "llama3.2:latest"; use "llama3.1:8b" for better quality
-CHUNK_SIZE = 15000        # chars per LLM chunk — llama3.1:8b has 128K token context
-CHUNK_OVERLAP = 500       # overlap between chunks to avoid splitting sections
+CHUNK_SIZE = 8000         # chars per LLM chunk — sweet spot for llama3.2 (3B) reliable JSON output
+CHUNK_OVERLAP = 300       # overlap between chunks to avoid splitting sections
 
 # ─── Output ─────────────────────────────────────────────────────────
 OUTPUT_DIR = "output"
