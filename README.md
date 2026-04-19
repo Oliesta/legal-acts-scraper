@@ -30,15 +30,28 @@ Most government legislation is published as PDF. Trying to parse HTML is fragile
 ### Linux / macOS
 
 ```bash
-# 1. Python deps
+# 1. Install Python 3.10+ and pip (Ubuntu/Debian)
+sudo apt-get update
+sudo apt-get install -y python3 python3-pip python3-venv
+# macOS (if not already installed via Xcode tools):
+# brew install python
+
+# 2. Clone the repo
+git clone -b claude/fix-windows-errors-readme-zPpSV https://github.com/oliesta/legal-acts-scraper.git
+cd legal-acts-scraper
+
+# 3. Create a virtual environment and install Python deps
+python3 -m venv .venv
+source .venv/bin/activate
+pip install --upgrade pip
 pip install -r requirements.txt
 
-# 2. Ollama + Llama
+# 4. Ollama + Llama
 curl -fsSL https://ollama.com/install.sh | sh
 ollama pull llama3.2        # or llama3.1:8b for better quality
 ollama serve                # if not auto-started
 
-# 3. System PDF tools
+# 5. System PDF tools
 sudo apt install poppler-utils tesseract-ocr   # Ubuntu/Debian
 # or:
 brew install poppler tesseract                  # macOS
@@ -48,8 +61,20 @@ brew install poppler tesseract                  # macOS
 
 pdfplumber and pypdf are pure Python and work out of the box. The steps below add the faster `pdftotext` and OCR support.
 
-**Step 1 — Python deps**
+**Step 1 — Install Python 3.10+**
+
+Download and install from https://www.python.org/downloads/ — tick **Add Python to PATH** during install.
+
+Verify:
 ```bat
+python --version
+pip --version
+```
+
+**Step 2 — Clone the repo and install Python deps**
+```bat
+git clone -b claude/fix-windows-errors-readme-zPpSV https://github.com/oliesta/legal-acts-scraper.git
+cd legal-acts-scraper
 pip install -r requirements.txt
 ```
 
