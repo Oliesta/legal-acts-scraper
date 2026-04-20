@@ -153,11 +153,15 @@ ZA_ACTS = [
 ]
 
 # ─── United Kingdom ─────────────────────────────────────────────────
+# Using enacted PDF URLs (static pre-built files) instead of /data.pdf
+# (which generates the consolidated/amended version on-demand and can take
+# 10+ minutes for large acts like FSMA). Format:
+#   /ukpga/{year}/{chapter}/pdfs/ukpga_{year}{chapter:04d}_en.pdf
 GB_ACTS = [
     # ── Insurance ──────────────────────────────────────────────────
     {
         "source": "url",
-        "url": "https://www.legislation.gov.uk/ukpga/2000/8/data.pdf",
+        "url": "https://www.legislation.gov.uk/ukpga/2000/8/pdfs/ukpga_20000008_en.pdf",
         "short_name": "FSMA",
         "act_number": "2000 c.8",
         "category": "insurance",
@@ -165,7 +169,7 @@ GB_ACTS = [
     },
     {
         "source": "url",
-        "url": "https://www.legislation.gov.uk/ukpga/2015/4/data.pdf",
+        "url": "https://www.legislation.gov.uk/ukpga/2015/4/pdfs/ukpga_20150004_en.pdf",
         "short_name": "IA",
         "act_number": "2015 c.4",
         "category": "insurance",
@@ -174,7 +178,7 @@ GB_ACTS = [
     # ── Consumer ───────────────────────────────────────────────────
     {
         "source": "url",
-        "url": "https://www.legislation.gov.uk/ukpga/2015/15/data.pdf",
+        "url": "https://www.legislation.gov.uk/ukpga/2015/15/pdfs/ukpga_20150015_en.pdf",
         "short_name": "CRA",
         "act_number": "2015 c.15",
         "category": "consumer",
@@ -182,7 +186,7 @@ GB_ACTS = [
     },
     {
         "source": "url",
-        "url": "https://www.legislation.gov.uk/ukpga/1987/43/data.pdf",
+        "url": "https://www.legislation.gov.uk/ukpga/1987/43/pdfs/ukpga_19870043_en.pdf",
         "short_name": "CPA",
         "act_number": "1987 c.43",
         "category": "consumer",
@@ -191,7 +195,7 @@ GB_ACTS = [
     # ── Employment ─────────────────────────────────────────────────
     {
         "source": "url",
-        "url": "https://www.legislation.gov.uk/ukpga/1996/18/data.pdf",
+        "url": "https://www.legislation.gov.uk/ukpga/1996/18/pdfs/ukpga_19960018_en.pdf",
         "short_name": "ERA",
         "act_number": "1996 c.18",
         "category": "employment",
@@ -199,7 +203,7 @@ GB_ACTS = [
     },
     {
         "source": "url",
-        "url": "https://www.legislation.gov.uk/ukpga/2010/15/data.pdf",
+        "url": "https://www.legislation.gov.uk/ukpga/2010/15/pdfs/ukpga_20100015_en.pdf",
         "short_name": "EA",
         "act_number": "2010 c.15",
         "category": "employment",
@@ -207,7 +211,7 @@ GB_ACTS = [
     },
     {
         "source": "url",
-        "url": "https://www.legislation.gov.uk/ukpga/1998/39/data.pdf",
+        "url": "https://www.legislation.gov.uk/ukpga/1998/39/pdfs/ukpga_19980039_en.pdf",
         "short_name": "NMWA",
         "act_number": "1998 c.39",
         "category": "employment",
@@ -216,7 +220,7 @@ GB_ACTS = [
     # ── Credit ─────────────────────────────────────────────────────
     {
         "source": "url",
-        "url": "https://www.legislation.gov.uk/ukpga/1974/39/data.pdf",
+        "url": "https://www.legislation.gov.uk/ukpga/1974/39/pdfs/ukpga_19740039_en.pdf",
         "short_name": "CCA",
         "act_number": "1974 c.39",
         "category": "credit",
@@ -224,7 +228,7 @@ GB_ACTS = [
     },
     {
         "source": "url",
-        "url": "https://www.legislation.gov.uk/ukpga/2012/21/data.pdf",
+        "url": "https://www.legislation.gov.uk/ukpga/2012/21/pdfs/ukpga_20120021_en.pdf",
         "short_name": "FSA",
         "act_number": "2012 c.21",
         "category": "credit",
@@ -233,7 +237,7 @@ GB_ACTS = [
     # ── Rental ─────────────────────────────────────────────────────
     {
         "source": "url",
-        "url": "https://www.legislation.gov.uk/ukpga/1988/50/data.pdf",
+        "url": "https://www.legislation.gov.uk/ukpga/1988/50/pdfs/ukpga_19880050_en.pdf",
         "short_name": "HA",
         "act_number": "1988 c.50",
         "category": "rental",
@@ -241,7 +245,7 @@ GB_ACTS = [
     },
     {
         "source": "url",
-        "url": "https://www.legislation.gov.uk/ukpga/1985/70/data.pdf",
+        "url": "https://www.legislation.gov.uk/ukpga/1985/70/pdfs/ukpga_19850070_en.pdf",
         "short_name": "LTA",
         "act_number": "1985 c.70",
         "category": "rental",
@@ -249,7 +253,7 @@ GB_ACTS = [
     },
     {
         "source": "url",
-        "url": "https://www.legislation.gov.uk/ukpga/2025/26/data.pdf",
+        "url": "https://www.legislation.gov.uk/ukpga/2025/26/pdfs/ukpga_20250026_en.pdf",
         "short_name": "RRA",
         "act_number": "2025 c.26",
         "category": "rental",
@@ -258,7 +262,7 @@ GB_ACTS = [
     # ── General ────────────────────────────────────────────────────
     {
         "source": "url",
-        "url": "https://www.legislation.gov.uk/ukpga/2018/12/data.pdf",
+        "url": "https://www.legislation.gov.uk/ukpga/2018/12/pdfs/ukpga_20180012_en.pdf",
         "short_name": "DPA",
         "act_number": "2018 c.12",
         "category": "general",
@@ -266,7 +270,7 @@ GB_ACTS = [
     },
     {
         "source": "url",
-        "url": "https://www.legislation.gov.uk/ukpga/1998/42/data.pdf",
+        "url": "https://www.legislation.gov.uk/ukpga/1998/42/pdfs/ukpga_19980042_en.pdf",
         "short_name": "HRA",
         "act_number": "1998 c.42",
         "category": "general",
