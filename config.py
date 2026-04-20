@@ -39,7 +39,7 @@ GROQ_CHUNK_SIZE = 6000    # free tier TPM limit is 12k tokens; 6k chars ≈ 4.9k
 # ─── LLM settings (Gemini — cloud, free tier: 1M TPM / 15 RPM) ────
 # Set GEMINI_API_KEY env var or pass --gemini to run_scraper.py.
 # Get a free key at https://aistudio.google.com/apikey
-GEMINI_DEFAULT_MODEL = "gemini-2.0-flash"  # 1M token context, fast, free
+GEMINI_DEFAULT_MODEL = "gemini-1.5-flash"  # stable free tier; use gemini-2.0-flash if your key supports it
 GEMINI_CHUNK_SIZE = 100000  # 100k chars ≈ 81k tokens; ZA_IA (514k chars) = 5 chunks
 
 # ─── Output ─────────────────────────────────────────────────────────

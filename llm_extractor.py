@@ -162,20 +162,41 @@ class LLMExtractor:
     def _call_gemini(self, prompt: str) -> str:
         """Send prompt to Google Gemini API and return response text."""
         try:
-            import google.generativeai as genai
-            genai.configure(api_key=self.api_key)
-            model = genai.GenerativeModel(self.model)
-            resp = model.generate_content(
-                prompt,
-                generation_config=genai.GenerationConfig(temperature=0.1),
+            from google import genai
+            from google.genai import types
+            client = genai.Client(api_key=self.api_key)
+            for attempt in range(4):
+                try:
+                    resp = client.models.generate_content(
+                        model=self.model,
+                        contents=prompt,
+                        config=types.GenerateContentConfig(
+                            temperature=0.1,
+                            max_output_tokens=8192,
+                        ),
+                    )
+                    return resp.text or ""
+                except Exception as e:
+                    msg = str(e)
+                    if "429" in msg or "quota" in msg.lower():
+                        # Parse "Please retry in X.XXs" from the error message
+                        m = re.search(r"retry in (\d+(?:\.\d+)?)\s*s", msg)
+                        wait = float(m.group(1)) + 1 if m else 2 ** attempt * 10
+                        wait = min(wait, 120)
+                        console.print(
+                            f"  [yellow]Gemini quota — waiting {wait:.0f}s "
+                            f"(attempt {attempt+1}/3)[/yellow]"
+                        )
+                        time.sleep(wait)
+                    else:
+                        console.print(f"  [red]Gemini error: {e}[/red]")
+                        return ""
+            console.print("  [red]Gemini quota: gave up after 4 attempts[/red]")
+            return ""
+        except ImportError:
+            console.print(
+                "  [red]google-genai not installed. Run: pip install google-genai[/red]"
             )
-            return resp.text or ""
-        except Exception as e:
-            msg = str(e)
-            if "429" in msg or "quota" in msg.lower():
-                console.print(f"  [yellow]Gemini quota: {msg}[/yellow]")
-            else:
-                console.print(f"  [red]Gemini error: {e}[/red]")
             return ""
 
     def _call_groq(self, prompt: str) -> str:
