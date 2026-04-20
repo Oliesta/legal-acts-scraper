@@ -109,6 +109,26 @@ class BaseScraper:
                 resp = self.session.get(url, timeout=REQUEST_TIMEOUT, stream=True)
                 resp.raise_for_status()
 
+                # legislation.gov.uk (and similar sites) return 202 while generating
+                # large PDFs on-demand. Poll until the content arrives.
+                if resp.status_code == 202:
+                    for poll in range(8):
+                        wait = 15 + poll * 10  # 15s → 85s per poll, ~5 min total
+                        console.print(
+                            f"  [dim]Server generating PDF (202) — "
+                            f"waiting {wait}s (poll {poll+1}/8)...[/dim]"
+                        )
+                        time.sleep(wait)
+                        resp = self.session.get(url, timeout=REQUEST_TIMEOUT, stream=True)
+                        resp.raise_for_status()
+                        if resp.status_code == 200:
+                            break
+                    else:
+                        self.errors.append(
+                            f"{config['short_name']}: PDF generation timed out after polling"
+                        )
+                        return None
+
                 with open(cache_path, "wb") as f:
                     for chunk in resp.iter_content(chunk_size=8192):
                         f.write(chunk)
