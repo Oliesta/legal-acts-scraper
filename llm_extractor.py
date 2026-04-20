@@ -178,13 +178,14 @@ class LLMExtractor:
                     return resp.text or ""
                 except Exception as e:
                     msg = str(e)
-                    if "429" in msg or "quota" in msg.lower():
+                    if "429" in msg or "quota" in msg.lower() or "503" in msg or "unavailable" in msg.lower():
                         # Parse "Please retry in X.XXs" from the error message
                         m = re.search(r"retry in (\d+(?:\.\d+)?)\s*s", msg)
                         wait = float(m.group(1)) + 1 if m else 2 ** attempt * 10
                         wait = min(wait, 120)
+                        label = "quota" if "429" in msg else "unavailable (503)"
                         console.print(
-                            f"  [yellow]Gemini quota — waiting {wait:.0f}s "
+                            f"  [yellow]Gemini {label} — waiting {wait:.0f}s "
                             f"(attempt {attempt+1}/3)[/yellow]"
                         )
                         time.sleep(wait)
