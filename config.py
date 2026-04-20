@@ -33,7 +33,7 @@ CHUNK_OVERLAP = 300       # overlap between chunks to avoid splitting sections
 # Set GROQ_API_KEY env var or pass --groq to run_scraper.py.
 # Get a free key at https://console.groq.com
 GROQ_DEFAULT_MODEL = "llama-3.3-70b-versatile"  # 128k context, free tier
-GROQ_CHUNK_SIZE = 32000   # Groq has 128k context; larger chunks = fewer API calls
+GROQ_CHUNK_SIZE = 6000    # free tier TPM limit is 12k tokens; 6k chars ≈ 4.9k tokens + 4k output ≈ 9k total
 
 # ─── Output ─────────────────────────────────────────────────────────
 OUTPUT_DIR = "output"

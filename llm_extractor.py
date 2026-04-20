@@ -156,15 +156,26 @@ class LLMExtractor:
     def _call_groq(self, prompt: str) -> str:
         """Send prompt to Groq API and return response text."""
         try:
-            from groq import Groq
+            from groq import Groq, RateLimitError
             client = Groq(api_key=self.api_key)
-            resp = client.chat.completions.create(
-                model=self.model,
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.1,
-                max_tokens=16384,
-            )
-            return resp.choices[0].message.content or ""
+            for attempt in range(4):
+                try:
+                    resp = client.chat.completions.create(
+                        model=self.model,
+                        messages=[{"role": "user", "content": prompt}],
+                        temperature=0.1,
+                        # Keep total tokens (input ~4.9k + output) under free-tier 12k TPM limit.
+                        max_tokens=4096,
+                    )
+                    return resp.choices[0].message.content or ""
+                except RateLimitError as e:
+                    wait = 2 ** attempt * 15  # 15s, 30s, 60s, 120s
+                    console.print(
+                        f"  [yellow]Groq rate limit — waiting {wait}s before retry {attempt+1}/3[/yellow]"
+                    )
+                    time.sleep(wait)
+            console.print("  [red]Groq rate limit: gave up after 4 attempts[/red]")
+            return ""
         except Exception as e:
             console.print(f"  [red]Groq error: {e}[/red]")
             return ""
