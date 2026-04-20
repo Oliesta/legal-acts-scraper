@@ -23,11 +23,17 @@ USER_AGENT = (
     "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
 )
 
-# ─── LLM settings ──────────────────────────────────────────────────
+# ─── LLM settings (Ollama — local) ────────────────────────────────
 OLLAMA_URL = "http://localhost:11434/api/generate"
 DEFAULT_MODEL = "gemma4:e4b"  # good balance of speed/quality on 32GB RAM; use "gemma4:26b" for best quality
 CHUNK_SIZE = 8000         # chars per LLM chunk — sweet spot for llama3.2 (3B) reliable JSON output
 CHUNK_OVERLAP = 300       # overlap between chunks to avoid splitting sections
+
+# ─── LLM settings (Groq — cloud, ~500 tok/s, free tier) ───────────
+# Set GROQ_API_KEY env var or pass --groq to run_scraper.py.
+# Get a free key at https://console.groq.com
+GROQ_DEFAULT_MODEL = "llama-3.3-70b-versatile"  # 128k context, free tier
+GROQ_CHUNK_SIZE = 32000   # Groq has 128k context; larger chunks = fewer API calls
 
 # ─── Output ─────────────────────────────────────────────────────────
 OUTPUT_DIR = "output"

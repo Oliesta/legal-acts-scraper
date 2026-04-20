@@ -1,6 +1,6 @@
 # Legal Acts Scraper (PDF-First)
 
-Python framework for extracting legal acts from PDF documents across ZA, GB, US, AU, and IN jurisdictions. Uses a local LLM (Gemma via Ollama) to parse PDF text into structured sections. Outputs JSON matching the Dala bulk-import schema.
+Python framework for extracting legal acts from PDF documents across ZA, GB, US, AU, and IN jurisdictions. Uses an LLM (local Gemma via Ollama, or Groq cloud API) to parse PDF text into structured sections. Outputs JSON matching the Dala bulk-import schema.
 
 ## Why PDF-first?
 
@@ -8,7 +8,7 @@ Most government legislation is published as PDF. Trying to parse HTML is fragile
 
 1. Downloads the PDF (or reads a local file you already have)
 2. Extracts raw text using a 4-layer stack (best → fallback)
-3. Sends text to a **local Gemma model** (via Ollama) to extract structured sections
+3. Sends text to an LLM (local Gemma via Ollama, or Groq cloud) to extract structured sections
 4. Validates output against the Dala import schema
 5. Writes clean JSON ready for bulk import
 
@@ -25,7 +25,29 @@ Most government legislation is published as PDF. Trying to parse HTML is fragile
 
 ---
 
-## Setup
+## Groq (recommended — free, ~500 tok/s, no GPU needed)
+
+Groq runs Llama on custom inference chips. Free tier is sufficient for a full 5-country run (~30–60 min vs ~24 hrs locally).
+
+**1. Get a free API key** at https://console.groq.com → API Keys → Create
+
+**2. Install deps and set key**
+```bash
+pip install -r requirements.txt   # includes groq package
+export GROQ_API_KEY=gsk_...       # add to ~/.bashrc or ~/.zshrc to make permanent
+```
+
+**3. Run**
+```bash
+python run_scraper.py --country ZA --groq
+python run_scraper.py --all --groq
+```
+
+The key is also auto-detected: if `GROQ_API_KEY` is set, `--groq` is implied. Default model is `llama-3.3-70b-versatile` (128k context, high quality). Override with `--model llama-3.1-8b-instant` for faster/lighter extraction.
+
+---
+
+## Setup (local Ollama)
 
 ### Linux / macOS
 
@@ -125,14 +147,20 @@ ollama list
 ### Run
 
 ```bash
-# Single country
+# Single country (Ollama)
 python run_scraper.py --country ZA
+
+# Single country (Groq)
+export GROQ_API_KEY=gsk_...
+python run_scraper.py --country ZA --groq
 
 # All countries
 python run_scraper.py --all
+python run_scraper.py --all --groq
 
-# Use a better model
-python run_scraper.py --country ZA --model gemma4:26b
+# Override model
+python run_scraper.py --country ZA --model gemma4:26b                    # Ollama
+python run_scraper.py --country ZA --groq --model llama-3.1-8b-instant  # Groq
 
 # Process a folder of local PDFs
 python run_scraper.py --folder ./pdfs/za --country ZA --category insurance
@@ -205,6 +233,7 @@ git merge origin/claude/fix-windows-errors-readme-zPpSV
 | `UnicodeDecodeError` from pdftotext | Fixed in current version — encoding is forced to UTF-8 |
 | Console window flashes on Windows | Fixed in current version — subprocess windows are suppressed |
 | `TesseractNotFoundError` | Install Tesseract; scraper auto-checks `C:\Program Files\Tesseract-OCR` |
-| `Cannot connect to Ollama` | Run `ollama serve` in a separate terminal |
+| `Cannot connect to Ollama` | Run `ollama serve` in a separate terminal, or switch to Groq (`--groq`) |
 | `model 'gemma4:e4b' not found` | Run `ollama pull gemma4:e4b` |
+| `GROQ_API_KEY not set` | `export GROQ_API_KEY=gsk_...` (get key at console.groq.com) |
 | `ValidationError: effectiveDate` | Add `"effective_date": "YYYY-MM-DD"` to the act config |

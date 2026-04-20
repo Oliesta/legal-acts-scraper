@@ -21,7 +21,7 @@ from typing import Optional
 import requests
 from rich.console import Console
 
-from config import CHUNK_OVERLAP, CHUNK_SIZE, DEFAULT_MODEL, OLLAMA_URL
+from config import CHUNK_OVERLAP, CHUNK_SIZE, DEFAULT_MODEL, GROQ_CHUNK_SIZE, OLLAMA_URL
 
 console = Console()
 
@@ -75,7 +75,7 @@ METADATA_EXTRACTION_PROMPT = textwrap.dedent("""\
 
 
 class LLMExtractor:
-    """Extract structured legal sections from raw PDF text using a local LLM."""
+    """Extract structured legal sections from raw PDF text using a local or cloud LLM."""
 
     def __init__(
         self,
@@ -83,11 +83,16 @@ class LLMExtractor:
         base_url: str = OLLAMA_URL,
         chunk_size: int = CHUNK_SIZE,
         chunk_overlap: int = CHUNK_OVERLAP,
+        provider: str = "ollama",  # "ollama" or "groq"
+        api_key: str = "",
     ):
         self.model = model
         self.base_url = base_url
-        self.chunk_size = chunk_size
         self.chunk_overlap = chunk_overlap
+        self.provider = provider
+        self.api_key = api_key
+        # Groq has a 128k context window; use larger chunks to cut API round-trips.
+        self.chunk_size = GROQ_CHUNK_SIZE if provider == "groq" else chunk_size
 
     # ── Public API ──────────────────────────────────────────────────
 
@@ -107,14 +112,14 @@ class LLMExtractor:
         for i, chunk in enumerate(chunks):
             console.print(
                 f"  [dim]Chunk {i+1}/{len(chunks)} ({len(chunk):,} chars) — "
-                f"waiting for Ollama...[/dim]",
+                f"waiting for {self.provider}...[/dim]",
                 end="\r",
             )
             t0 = time.time()
             prompt = SECTION_EXTRACTION_PROMPT.format(
                 country=country_code, text=chunk
             )
-            result = self._call_ollama(prompt)
+            result = self._call_llm(prompt)
             elapsed = time.time() - t0
             sections = self._parse_sections_response(result)
             found = len(sections)
@@ -138,10 +143,31 @@ class LLMExtractor:
         # Only send the beginning of the doc for metadata
         text_sample = raw_text[:3000]
         prompt = METADATA_EXTRACTION_PROMPT.format(text=text_sample)
-        result = self._call_ollama(prompt)
+        result = self._call_llm(prompt)
         return self._parse_metadata_response(result)
 
-    # ── Ollama communication ────────────────────────────────────────
+    # ── LLM communication ───────────────────────────────────────────
+
+    def _call_llm(self, prompt: str) -> str:
+        if self.provider == "groq":
+            return self._call_groq(prompt)
+        return self._call_ollama(prompt)
+
+    def _call_groq(self, prompt: str) -> str:
+        """Send prompt to Groq API and return response text."""
+        try:
+            from groq import Groq
+            client = Groq(api_key=self.api_key)
+            resp = client.chat.completions.create(
+                model=self.model,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.1,
+                max_tokens=16384,
+            )
+            return resp.choices[0].message.content or ""
+        except Exception as e:
+            console.print(f"  [red]Groq error: {e}[/red]")
+            return ""
 
     def _call_ollama(self, prompt: str) -> str:
         """Send prompt to Ollama and return response text."""
