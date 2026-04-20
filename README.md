@@ -48,7 +48,7 @@ pip install -r requirements.txt
 
 # 4. Ollama + Gemma
 curl -fsSL https://ollama.com/install.sh | sh
-ollama pull gemma4          # or gemma4:12b for better quality
+ollama pull gemma4:e2b      # 7.2GB, fits in 16GB RAM; or gemma4:e4b (9.6GB) for better quality
 ollama serve                # if not auto-started
 
 # 5. System PDF tools
@@ -82,7 +82,7 @@ pip install -r requirements.txt
 
 Download and run the installer from https://ollama.com/download, then:
 ```bat
-ollama pull gemma4
+ollama pull gemma4:e2b
 ollama serve
 ```
 
@@ -130,7 +130,7 @@ python run_scraper.py --country ZA
 python run_scraper.py --all
 
 # Use a better model
-python run_scraper.py --country ZA --model gemma4:12b
+python run_scraper.py --country ZA --model gemma4:e4b
 
 # Process a folder of local PDFs
 python run_scraper.py --folder ./pdfs/za --country ZA --category insurance
@@ -204,5 +204,5 @@ git merge origin/claude/fix-windows-errors-readme-zPpSV
 | Console window flashes on Windows | Fixed in current version — subprocess windows are suppressed |
 | `TesseractNotFoundError` | Install Tesseract; scraper auto-checks `C:\Program Files\Tesseract-OCR` |
 | `Cannot connect to Ollama` | Run `ollama serve` in a separate terminal |
-| `model 'gemma4' not found` | Run `ollama pull gemma4` |
+| `model 'gemma4:e2b' not found` | Run `ollama pull gemma4:e2b` |
 | `ValidationError: effectiveDate` | Add `"effective_date": "YYYY-MM-DD"` to the act config |
