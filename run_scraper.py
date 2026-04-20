@@ -21,7 +21,7 @@ from pathlib import Path
 from rich.console import Console
 from rich.table import Table
 
-from config import COUNTRY_CONFIGS, DEFAULT_MODEL, GROQ_DEFAULT_MODEL, OUTPUT_DIR
+from config import COUNTRY_CONFIGS, DEFAULT_MODEL, GEMINI_DEFAULT_MODEL, GROQ_DEFAULT_MODEL, OUTPUT_DIR
 from llm_extractor import LLMExtractor
 from scrapers import AUScraper, GBScraper, INScraper, USScraper, ZAScraper
 
@@ -118,6 +118,7 @@ def main():
     parser.add_argument("--category", type=str, default="general", help="Category for --folder mode (default: general)")
     parser.add_argument("--output", type=str, help="Custom output filename")
     parser.add_argument("--groq", action="store_true", help="Use Groq API instead of Ollama (reads GROQ_API_KEY env var)")
+    parser.add_argument("--gemini", action="store_true", help="Use Google Gemini API (reads GEMINI_API_KEY env var)")
     args = parser.parse_args()
 
     if not args.country and not args.all and not args.folder:
@@ -130,10 +131,23 @@ def main():
         sys.exit(1)
 
     # Determine provider and API key
+    gemini_api_key = os.environ.get("GEMINI_API_KEY", "")
     groq_api_key = os.environ.get("GROQ_API_KEY", "")
-    use_groq = args.groq or bool(groq_api_key)
+    use_gemini = args.gemini or bool(gemini_api_key)
+    use_groq = args.groq or (bool(groq_api_key) and not use_gemini)
 
-    if use_groq:
+    if use_gemini:
+        if not gemini_api_key:
+            console.print(
+                "[bold red]GEMINI_API_KEY not set.[/bold red]\n"
+                "Get a free key: https://aistudio.google.com/apikey\n"
+                "Then: export GEMINI_API_KEY=AIza..."
+            )
+            sys.exit(1)
+        model = args.model or GEMINI_DEFAULT_MODEL
+        llm = LLMExtractor(model=model, provider="gemini", api_key=gemini_api_key)
+        console.print(f"[bold cyan]LLM: {model}[/bold cyan] (via Gemini — 1M TPM free tier)")
+    elif use_groq:
         if not groq_api_key:
             console.print(
                 "[bold red]GROQ_API_KEY not set.[/bold red]\n"
@@ -164,7 +178,7 @@ def main():
                 "[bold red]Cannot connect to Ollama![/bold red]\n"
                 "Start it with: ollama serve\n"
                 "Then pull a model: ollama pull gemma4:e4b\n"
-                "Or use Groq instead: export GROQ_API_KEY=gsk_... then re-run with --groq"
+                "Or use Gemini (recommended): export GEMINI_API_KEY=AIza... then re-run with --gemini"
             )
             sys.exit(1)
 

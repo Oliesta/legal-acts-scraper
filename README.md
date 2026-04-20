@@ -1,6 +1,6 @@
 # Legal Acts Scraper (PDF-First)
 
-Python framework for extracting legal acts from PDF documents across ZA, GB, US, AU, and IN jurisdictions. Uses an LLM (local Gemma via Ollama, or Groq cloud API) to parse PDF text into structured sections. Outputs JSON matching the Dala bulk-import schema.
+Python framework for extracting legal acts from PDF documents across ZA, GB, US, AU, and IN jurisdictions. Uses an LLM (local Gemma via Ollama, Google Gemini, or Groq) to parse PDF text into structured sections. Outputs JSON matching the Dala bulk-import schema.
 
 ## Why PDF-first?
 
@@ -8,7 +8,7 @@ Most government legislation is published as PDF. Trying to parse HTML is fragile
 
 1. Downloads the PDF (or reads a local file you already have)
 2. Extracts raw text using a 4-layer stack (best → fallback)
-3. Sends text to an LLM (local Gemma via Ollama, or Groq cloud) to extract structured sections
+3. Sends text to an LLM (local Gemma via Ollama, Google Gemini, or Groq) to extract structured sections
 4. Validates output against the Dala import schema
 5. Writes clean JSON ready for bulk import
 
@@ -25,25 +25,36 @@ Most government legislation is published as PDF. Trying to parse HTML is fragile
 
 ---
 
-## Groq (recommended — free, ~500 tok/s, no GPU needed)
+## Gemini (recommended — free, 1M TPM, no GPU needed)
 
-Groq runs Llama on custom inference chips. Free tier is sufficient for a full 5-country run (~30–60 min vs ~24 hrs locally).
+Google Gemini Flash has a free tier with 1 million tokens per minute — enough to finish a full 5-country run in ~30 minutes. ZA's largest act (514k chars) becomes 5 chunks instead of 91.
 
-**1. Get a free API key** at https://console.groq.com → API Keys → Create
+**1. Get a free API key** at https://aistudio.google.com/apikey → Create API key
 
 **2. Install deps and set key**
 ```bash
-pip install -r requirements.txt   # includes groq package
-export GROQ_API_KEY=gsk_...       # add to ~/.bashrc or ~/.zshrc to make permanent
+pip install -r requirements.txt   # includes google-generativeai
+export GEMINI_API_KEY=AIza...     # add to ~/.bashrc to make permanent
 ```
 
 **3. Run**
 ```bash
-python run_scraper.py --country ZA --groq
-python run_scraper.py --all --groq
+python run_scraper.py --country ZA --gemini
+python run_scraper.py --all --gemini
 ```
 
-The key is also auto-detected: if `GROQ_API_KEY` is set, `--groq` is implied. Default model is `llama-3.3-70b-versatile` (128k context, high quality). Override with `--model llama-3.1-8b-instant` for faster/lighter extraction.
+The key is auto-detected: if `GEMINI_API_KEY` is set in the environment, `--gemini` is implied. Default model is `gemini-2.0-flash`.
+
+---
+
+## Groq (alternative — free but 100k tokens/day limit)
+
+Groq's free tier burns out after ~1 act. Only useful for small one-off tests.
+
+```bash
+export GROQ_API_KEY=gsk_...
+python run_scraper.py --country ZA --groq
+```
 
 ---
 
@@ -233,7 +244,8 @@ git merge origin/claude/fix-windows-errors-readme-zPpSV
 | `UnicodeDecodeError` from pdftotext | Fixed in current version — encoding is forced to UTF-8 |
 | Console window flashes on Windows | Fixed in current version — subprocess windows are suppressed |
 | `TesseractNotFoundError` | Install Tesseract; scraper auto-checks `C:\Program Files\Tesseract-OCR` |
-| `Cannot connect to Ollama` | Run `ollama serve` in a separate terminal, or switch to Groq (`--groq`) |
+| `Cannot connect to Ollama` | Run `ollama serve`, or use Gemini: `export GEMINI_API_KEY=AIza... && python run_scraper.py --gemini` |
 | `model 'gemma4:e4b' not found` | Run `ollama pull gemma4:e4b` |
-| `GROQ_API_KEY not set` | `export GROQ_API_KEY=gsk_...` (get key at console.groq.com) |
+| `GEMINI_API_KEY not set` | Get free key at aistudio.google.com/apikey, then `export GEMINI_API_KEY=AIza...` |
+| Groq 429 / 100k TPD limit hit | Groq free tier only allows 100k tokens/day — switch to Gemini (`--gemini`) |
 | `ValidationError: effectiveDate` | Add `"effective_date": "YYYY-MM-DD"` to the act config |

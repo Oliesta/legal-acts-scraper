@@ -21,7 +21,7 @@ from typing import Optional
 import requests
 from rich.console import Console
 
-from config import CHUNK_OVERLAP, CHUNK_SIZE, DEFAULT_MODEL, GROQ_CHUNK_SIZE, OLLAMA_URL
+from config import CHUNK_OVERLAP, CHUNK_SIZE, DEFAULT_MODEL, GEMINI_CHUNK_SIZE, GROQ_CHUNK_SIZE, OLLAMA_URL
 
 console = Console()
 
@@ -83,7 +83,7 @@ class LLMExtractor:
         base_url: str = OLLAMA_URL,
         chunk_size: int = CHUNK_SIZE,
         chunk_overlap: int = CHUNK_OVERLAP,
-        provider: str = "ollama",  # "ollama" or "groq"
+        provider: str = "ollama",  # "ollama", "groq", or "gemini"
         api_key: str = "",
     ):
         self.model = model
@@ -91,8 +91,12 @@ class LLMExtractor:
         self.chunk_overlap = chunk_overlap
         self.provider = provider
         self.api_key = api_key
-        # Groq has a 128k context window; use larger chunks to cut API round-trips.
-        self.chunk_size = GROQ_CHUNK_SIZE if provider == "groq" else chunk_size
+        if provider == "groq":
+            self.chunk_size = GROQ_CHUNK_SIZE
+        elif provider == "gemini":
+            self.chunk_size = GEMINI_CHUNK_SIZE
+        else:
+            self.chunk_size = chunk_size
 
     # ── Public API ──────────────────────────────────────────────────
 
@@ -151,7 +155,28 @@ class LLMExtractor:
     def _call_llm(self, prompt: str) -> str:
         if self.provider == "groq":
             return self._call_groq(prompt)
+        if self.provider == "gemini":
+            return self._call_gemini(prompt)
         return self._call_ollama(prompt)
+
+    def _call_gemini(self, prompt: str) -> str:
+        """Send prompt to Google Gemini API and return response text."""
+        try:
+            import google.generativeai as genai
+            genai.configure(api_key=self.api_key)
+            model = genai.GenerativeModel(self.model)
+            resp = model.generate_content(
+                prompt,
+                generation_config=genai.GenerationConfig(temperature=0.1),
+            )
+            return resp.text or ""
+        except Exception as e:
+            msg = str(e)
+            if "429" in msg or "quota" in msg.lower():
+                console.print(f"  [yellow]Gemini quota: {msg}[/yellow]")
+            else:
+                console.print(f"  [red]Gemini error: {e}[/red]")
+            return ""
 
     def _call_groq(self, prompt: str) -> str:
         """Send prompt to Groq API and return response text."""

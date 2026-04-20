@@ -32,8 +32,15 @@ CHUNK_OVERLAP = 300       # overlap between chunks to avoid splitting sections
 # ─── LLM settings (Groq — cloud, ~500 tok/s, free tier) ───────────
 # Set GROQ_API_KEY env var or pass --groq to run_scraper.py.
 # Get a free key at https://console.groq.com
+# Note: free tier is 12k TPM — too tight for large acts. Use Gemini instead.
 GROQ_DEFAULT_MODEL = "llama-3.3-70b-versatile"  # 128k context, free tier
 GROQ_CHUNK_SIZE = 6000    # free tier TPM limit is 12k tokens; 6k chars ≈ 4.9k tokens + 4k output ≈ 9k total
+
+# ─── LLM settings (Gemini — cloud, free tier: 1M TPM / 15 RPM) ────
+# Set GEMINI_API_KEY env var or pass --gemini to run_scraper.py.
+# Get a free key at https://aistudio.google.com/apikey
+GEMINI_DEFAULT_MODEL = "gemini-2.0-flash"  # 1M token context, fast, free
+GEMINI_CHUNK_SIZE = 100000  # 100k chars ≈ 81k tokens; ZA_IA (514k chars) = 5 chunks
 
 # ─── Output ─────────────────────────────────────────────────────────
 OUTPUT_DIR = "output"
