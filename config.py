@@ -25,7 +25,7 @@ USER_AGENT = (
 
 # ─── LLM settings ──────────────────────────────────────────────────
 OLLAMA_URL = "http://localhost:11434/api/generate"
-DEFAULT_MODEL = "gemma4:e2b"  # fits in 16GB RAM; use "gemma4:e4b" for better quality
+DEFAULT_MODEL = "gemma4:e4b"  # good balance of speed/quality on 32GB RAM; use "gemma4:26b" for best quality
 CHUNK_SIZE = 8000         # chars per LLM chunk — sweet spot for llama3.2 (3B) reliable JSON output
 CHUNK_OVERLAP = 300       # overlap between chunks to avoid splitting sections
 
