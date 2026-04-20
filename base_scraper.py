@@ -93,8 +93,14 @@ class BaseScraper:
         # Cache filename based on short_name
         cache_path = Path(PDF_CACHE_DIR) / f"{self.country_code}_{config['short_name']}.pdf"
         if cache_path.exists():
-            console.print(f"  [dim]Using cached PDF: {cache_path}[/dim]")
-            return cache_path
+            # Validate the cached file is actually a PDF (not a previously-cached HTML error page)
+            with open(cache_path, "rb") as f:
+                header = f.read(4)
+            if header == b"%PDF":
+                console.print(f"  [dim]Using cached PDF: {cache_path}[/dim]")
+                return cache_path
+            console.print(f"  [yellow]Cached file is not a PDF — re-downloading[/yellow]")
+            cache_path.unlink()
 
         url = config["url"]
         for attempt in range(1, MAX_RETRIES + 1):
@@ -103,21 +109,21 @@ class BaseScraper:
                 resp = self.session.get(url, timeout=REQUEST_TIMEOUT, stream=True)
                 resp.raise_for_status()
 
-                # Verify it's actually a PDF
-                content_type = resp.headers.get("Content-Type", "")
-                if "pdf" not in content_type and not url.endswith(".pdf"):
-                    # Check first bytes
-                    first_bytes = next(resp.iter_content(chunk_size=8))
-                    if not first_bytes.startswith(b"%PDF"):
-                        self.errors.append(
-                            f"{config['short_name']}: URL did not return a PDF "
-                            f"(Content-Type: {content_type})"
-                        )
-                        return None
-
                 with open(cache_path, "wb") as f:
                     for chunk in resp.iter_content(chunk_size=8192):
                         f.write(chunk)
+
+                # Always verify the saved file starts with %PDF
+                with open(cache_path, "rb") as f:
+                    header = f.read(4)
+                if header != b"%PDF":
+                    cache_path.unlink()
+                    content_type = resp.headers.get("Content-Type", "")
+                    self.errors.append(
+                        f"{config['short_name']}: URL did not return a PDF "
+                        f"(Content-Type: {content_type}, got: {header!r})"
+                    )
+                    return None
 
                 size_mb = cache_path.stat().st_size / (1024 * 1024)
                 console.print(f"  [green]Downloaded {size_mb:.1f} MB → {cache_path}[/green]")
