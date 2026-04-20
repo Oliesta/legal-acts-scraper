@@ -43,7 +43,7 @@ python run_scraper.py --country ZA --gemini
 python run_scraper.py --all --gemini
 ```
 
-The key is auto-detected: if `GEMINI_API_KEY` is set in the environment, `--gemini` is implied. Default model is `gemini-1.5-flash`. If you get `limit: 0` errors, your key may not have free-tier access to that model — try `--model gemini-1.5-flash-8b` or enable billing on your Google Cloud project (full run costs ~$0.14 at pay-as-you-go rates).
+The key is auto-detected: if `GEMINI_API_KEY` is set in the environment, `--gemini` is implied. Default model is `gemini-3.1-flash-lite-preview` (15 RPM / 250K TPM / 500 RPD — the only free-tier model with enough daily quota for a full 5-country run).
 
 ---
 
