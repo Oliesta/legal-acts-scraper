@@ -1,7 +1,7 @@
 """
-LLM-powered section extraction from raw PDF text.
+Gemma-powered section extraction from raw PDF text.
 
-Sends text to local Ollama in chunks, asking the model to identify and extract
+Sends text to local Ollama in chunks, asking Gemma to identify and extract
 each numbered section with its title and full content. Returns structured
 data matching SectionSchema.
 
