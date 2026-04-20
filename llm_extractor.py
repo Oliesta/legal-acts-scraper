@@ -47,6 +47,7 @@ SECTION_EXTRACTION_PROMPT = textwrap.dedent("""\
     - Ignore the table of contents — only extract actual section text
     - If text is cut off (chunk boundary), extract what you have — it will be merged later
     - Section titles: if the act doesn't have explicit titles, create a brief descriptive one
+    - IMPORTANT: If the document contains text in multiple languages, extract ONLY the English text. Discard any Afrikaans, Zulu, Xhosa, Sotho, or other non-English sentences or paragraphs.
 
     Respond with ONLY a JSON array. No explanation, no markdown fences, no preamble.
     If you find no sections in this chunk, respond with: []
