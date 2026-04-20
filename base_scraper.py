@@ -409,20 +409,46 @@ class BaseScraper:
             console.print(f"[yellow]No acts configured for {self.country_code}[/yellow]")
             return []
 
+        # Load any previously completed acts so we can skip them on restart.
+        existing_path = Path(OUTPUT_DIR) / f"{self.country_code}_acts.json"
+        done: dict[str, dict] = {}
+        if existing_path.exists():
+            try:
+                with open(existing_path, encoding="utf-8") as f:
+                    for entry in json.load(f):
+                        done[entry["shortName"]] = entry
+                if done:
+                    console.print(
+                        f"  [dim]Resuming — {len(done)} act(s) already in "
+                        f"{existing_path.name}, skipping them[/dim]"
+                    )
+                self.results = list(done.values())
+            except Exception:
+                pass  # corrupt/empty file — start fresh
+
         console.print(f"\n[bold blue]═══ {self.country_code} ═══[/bold blue] {len(self.act_configs)} act(s)\n")
 
         for i, config in enumerate(self.act_configs):
-            console.print(f"[bold]({i+1}/{len(self.act_configs)}) {config['short_name']}[/bold]")
+            short = config["short_name"]
+            console.print(f"[bold]({i+1}/{len(self.act_configs)}) {short}[/bold]")
+
+            if short in done:
+                console.print(
+                    f"  [dim]Already done ({len(done[short].get('sections', []))} sections) — skipping[/dim]\n"
+                )
+                continue
 
             act = self.process_act(config)
             if act:
                 self.results.append(act.model_dump())
+                # Save after every successful act so progress survives a crash.
+                self.save()
                 console.print(
                     f"  [bold green]✓ {act.shortName}[/bold green] — "
                     f"{len(act.sections)} section(s)\n"
                 )
             else:
-                console.print(f"  [bold red]✗ Failed: {config['short_name']}[/bold red]\n")
+                console.print(f"  [bold red]✗ Failed: {short}[/bold red]\n")
 
             if i < len(self.act_configs) - 1:
                 time.sleep(REQUEST_DELAY)
