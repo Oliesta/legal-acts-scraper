@@ -181,6 +181,52 @@ python run_scraper.py --folder ./pdfs/za --country ZA --category insurance
 
 ---
 
+## Enrich sections with tags and keyProvisions
+
+After scraping, run `enrich_sections.py` to add two extra fields to every section:
+
+| Field | Type | Description |
+|---|---|---|
+| `tags` | `string[]` | 5–10 lowercase keyword strings (legal concepts, topics, affected parties) |
+| `keyProvisions` | `string[]` | 3–6 plain-language strings summarising key obligations, rights, or penalties |
+
+Sections that already have `tags` are skipped, so the script is safe to re-run after an interruption.
+
+```bash
+# Single country (Gemini — recommended)
+python enrich_sections.py --country ZA
+
+# All countries
+python enrich_sections.py --all
+
+# Specific file
+python enrich_sections.py output/ZA_acts.json
+
+# With Groq (100k token/day limit — only practical for small runs)
+python enrich_sections.py --country ZA --groq
+
+# Override model or batch size
+python enrich_sections.py --all --model gemini-2.0-flash-lite --batch-size 10
+```
+
+The script batches 15 sections per LLM call (configurable via `--batch-size`) to minimise API quota usage, and saves the JSON after each act so progress is never lost.
+
+**Typical output for one section:**
+```json
+{
+  "title": "Insurer's duty to pay",
+  "content": "...",
+  "tags": ["claims settlement", "payment obligation", "insurance", "policyholder rights", "dispute resolution"],
+  "keyProvisions": [
+    "Insurer must settle valid claims within 10 business days of receiving all required documents",
+    "Failure to pay within the prescribed period entitles the policyholder to statutory interest",
+    "Disputes may be referred to the Ombud without first exhausting internal processes"
+  ]
+}
+```
+
+---
+
 ## Auto-generate metadata
 
 Use `auto_metadata.py` to generate a config entry from a PDF and optionally append it to `config.py`:
@@ -249,3 +295,4 @@ git merge origin/claude/fix-windows-errors-readme-zPpSV
 | `GEMINI_API_KEY not set` | Get free key at aistudio.google.com/apikey, then `export GEMINI_API_KEY=AIza...` |
 | Groq 429 / 100k TPD limit hit | Groq free tier only allows 100k tokens/day — switch to Gemini (`--gemini`) |
 | `ValidationError: effectiveDate` | Add `"effective_date": "YYYY-MM-DD"` to the act config |
+| `enrich_sections.py` — unexpected result count | LLM merged or split sections in its response; the batch is skipped and re-runnable |
