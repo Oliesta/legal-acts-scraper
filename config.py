@@ -554,7 +554,7 @@ IN_ACTS = [
     # ── Consumer ───────────────────────────────────────────────────
     {
         "source": "url",
-        "url": "https://www.indiacode.nic.in/bitstream/123456789/15256/1/a2019-35.pdf",
+        "url": "https://www.indiacode.nic.in/bitstream/123456789/15256/1/eng201935.pdf",
         "short_name": "CPA",
         "act_number": "Act No. 35 of 2019",
         "category": "consumer",
@@ -562,7 +562,7 @@ IN_ACTS = [
     },
     {
         "source": "url",
-        "url": "https://www.indiacode.nic.in/bitstream/123456789/7052/1/consumer_protection_act_1986.pdf",
+        "url": "https://www.indiacode.nic.in/bitstream/123456789/9463/1/cpa1986-68.pdf",
         "short_name": "COPRA",
         "act_number": "Act No. 68 of 1986",
         "category": "consumer",
@@ -579,7 +579,7 @@ IN_ACTS = [
     },
     {
         "source": "url",
-        "url": "https://www.indiacode.nic.in/bitstream/123456789/19310/1/a1936-4.pdf",
+        "url": "https://www.indiacode.nic.in/bitstream/123456789/20960/1/the_payment_of_wages_act%2c_1936.pdf",
         "short_name": "PWA",
         "act_number": "Act No. 4 of 1936",
         "category": "employment",
