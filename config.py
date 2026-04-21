@@ -597,7 +597,7 @@ IN_ACTS = [
     },
     {
         "source": "url",
-        "url": "https://www.indiacode.nic.in/bitstream/123456789/15793/1/A2019-29.pdf",
+        "url": "https://www.indiacode.nic.in/bitstream/123456789/15793/1/aA2019-29.pdf",
         "short_name": "COW",
         "act_number": "Act No. 29 of 2019",
         "category": "employment",
@@ -631,7 +631,7 @@ IN_ACTS = [
     # ── Rental ─────────────────────────────────────────────────────
     {
         "source": "url",
-        "url": "https://www.indiacode.nic.in/bitstream/123456789/2158/1/a2016-16.pdf",
+        "url": "https://www.indiacode.nic.in/bitstream/123456789/2158/3/A2016-16.pdf",
         "short_name": "RERA",
         "act_number": "Act No. 16 of 2016",
         "category": "rental",
@@ -655,7 +655,7 @@ IN_ACTS = [
     },
     {
         "source": "url",
-        "url": "https://www.indiacode.nic.in/bitstream/123456789/2065/1/A2005-22.pdf",
+        "url": "https://www.indiacode.nic.in/bitstream/123456789/2065/1/aa2005.pdf",
         "short_name": "RTI",
         "act_number": "Act No. 22 of 2005",
         "category": "general",
