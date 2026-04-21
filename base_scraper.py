@@ -137,7 +137,50 @@ class BaseScraper:
                 with open(cache_path, "rb") as f:
                     header = f.read(4)
                 if header != b"%PDF":
+                    # Try to auto-discover a dated PDF URL from the page
+                    # (e.g. legislation.gov.au downloads page embeds the real PDF path)
+                    try:
+                        with open(cache_path, encoding="utf-8", errors="replace") as fh:
+                            html_content = fh.read(200000)
+                    except Exception:
+                        html_content = ""
                     cache_path.unlink()
+
+                    m = re.search(
+                        r'(/[A-Z][A-Z0-9]*/\d{4}-\d{2}-\d{2}/\d{4}-\d{2}-\d{2}/text/original/pdf[^"<\s]*)',
+                        html_content,
+                    )
+                    if m:
+                        from urllib.parse import urljoin
+                        direct_url = urljoin(url, m.group(1))
+                        console.print(
+                            f"  [dim]Discovered PDF URL from downloads page → {direct_url}[/dim]"
+                        )
+                        try:
+                            resp2 = self.session.get(
+                                direct_url, timeout=REQUEST_TIMEOUT, stream=True
+                            )
+                            resp2.raise_for_status()
+                            with open(cache_path, "wb") as fh:
+                                for chunk in resp2.iter_content(chunk_size=8192):
+                                    fh.write(chunk)
+                            with open(cache_path, "rb") as fh:
+                                header2 = fh.read(4)
+                            if header2 == b"%PDF":
+                                size_mb = cache_path.stat().st_size / (1024 * 1024)
+                                console.print(
+                                    f"  [green]Downloaded {size_mb:.1f} MB → {cache_path}[/green]"
+                                )
+                                return cache_path
+                            if cache_path.exists():
+                                cache_path.unlink()
+                        except Exception as disc_err:
+                            console.print(
+                                f"  [red]Auto-discovered URL failed: {disc_err}[/red]"
+                            )
+                            if cache_path.exists():
+                                cache_path.unlink()
+
                     content_type = resp.headers.get("Content-Type", "")
                     self.errors.append(
                         f"{config['short_name']}: URL did not return a PDF "

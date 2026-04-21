@@ -417,35 +417,37 @@ US_ACTS = [
 ]
 
 # ─── Australia ──────────────────────────────────────────────────────
+# All /latest/downloads URLs return an HTML page listing available PDF versions.
+# _download_pdf auto-discovers the dated PDF URL from that page using a regex.
 AU_ACTS = [
     # ── Insurance ──────────────────────────────────────────────────
     {
-        "source": "html",
-        "url": "https://www.legislation.gov.au/C1973A00076/latest/text",
+        "source": "url",
+        "url": "https://www.legislation.gov.au/C1973A00076/latest/downloads",
         "short_name": "IA",
         "act_number": "No. 76 of 1973",
         "category": "insurance",
         "effective_date": "1973-06-19",
     },
     {
-        "source": "html",
-        "url": "https://www.legislation.gov.au/C2004A02944/latest/text",
+        "source": "url",
+        "url": "https://www.legislation.gov.au/C2004A02944/latest/downloads",
         "short_name": "ICA",
         "act_number": "No. 80 of 1984",
         "category": "insurance",
         "effective_date": "1986-01-01",
     },
     {
-        "source": "html",
-        "url": "https://www.legislation.gov.au/C2004A04860/latest/text",
+        "source": "url",
+        "url": "https://www.legislation.gov.au/C2004A04860/latest/downloads",
         "short_name": "LIA",
         "act_number": "No. 4 of 1995",
         "category": "insurance",
         "effective_date": "1995-07-01",
     },
     {
-        "source": "html",
-        "url": "https://www.legislation.gov.au/C2004A00101/latest/text",
+        "source": "url",
+        "url": "https://www.legislation.gov.au/C2004A00101/latest/downloads",
         "short_name": "HIA",
         "act_number": "No. 42 of 1974",
         "category": "insurance",
@@ -453,16 +455,16 @@ AU_ACTS = [
     },
     # ── Consumer ───────────────────────────────────────────────────
     {
-        "source": "html",
-        "url": "https://www.legislation.gov.au/C2004A00109/latest/text",
+        "source": "url",
+        "url": "https://www.legislation.gov.au/C2004A00109/latest/downloads",
         "short_name": "CCA",
         "act_number": "No. 51 of 1974",
         "category": "consumer",
         "effective_date": "2011-01-01",
     },
     {
-        "source": "html",
-        "url": "https://www.legislation.gov.au/C2004A00819/latest/text",
+        "source": "url",
+        "url": "https://www.legislation.gov.au/C2004A00819/latest/downloads",
         "short_name": "ASIC",
         "act_number": "No. 51 of 2001",
         "category": "consumer",
@@ -470,24 +472,24 @@ AU_ACTS = [
     },
     # ── Employment ─────────────────────────────────────────────────
     {
-        "source": "html",
-        "url": "https://www.legislation.gov.au/C2009A00028/latest/text",
+        "source": "url",
+        "url": "https://www.legislation.gov.au/C2009A00028/latest/downloads",
         "short_name": "FWA",
         "act_number": "No. 28 of 2009",
         "category": "employment",
         "effective_date": "2009-07-01",
     },
     {
-        "source": "html",
-        "url": "https://www.legislation.gov.au/C2011A00137/latest/text",
+        "source": "url",
+        "url": "https://www.legislation.gov.au/C2011A00137/latest/downloads",
         "short_name": "WHS",
         "act_number": "No. 137 of 2011",
         "category": "employment",
         "effective_date": "2012-01-01",
     },
     {
-        "source": "html",
-        "url": "https://www.legislation.gov.au/C2004A03332/latest/text",
+        "source": "url",
+        "url": "https://www.legislation.gov.au/C2004A03332/latest/downloads",
         "short_name": "WGEA",
         "act_number": "No. 91 of 1986",
         "category": "employment",
@@ -495,16 +497,16 @@ AU_ACTS = [
     },
     # ── Credit ─────────────────────────────────────────────────────
     {
-        "source": "html",
-        "url": "https://www.legislation.gov.au/C2009A00134/latest/text",
+        "source": "url",
+        "url": "https://www.legislation.gov.au/C2009A00134/latest/downloads",
         "short_name": "NCCP",
         "act_number": "No. 134 of 2009",
         "category": "credit",
         "effective_date": "2010-07-01",
     },
     {
-        "source": "html",
-        "url": "https://www.legislation.gov.au/C1959A00006/latest/text",
+        "source": "url",
+        "url": "https://www.legislation.gov.au/C1959A00006/latest/downloads",
         "short_name": "BA",
         "act_number": "No. 6 of 1959",
         "category": "credit",
@@ -512,8 +514,8 @@ AU_ACTS = [
     },
     # ── General ────────────────────────────────────────────────────
     {
-        "source": "html",
-        "url": "https://www.legislation.gov.au/C2004A03712/latest/text",
+        "source": "url",
+        "url": "https://www.legislation.gov.au/C2004A03712/latest/downloads",
         "short_name": "PA",
         "act_number": "No. 119 of 1988",
         "category": "general",
@@ -521,7 +523,7 @@ AU_ACTS = [
     },
     {
         "source": "url",
-        "url": "https://www.legislation.gov.au/C2004A02562/latest/download",
+        "url": "https://www.legislation.gov.au/C2004A02562/latest/downloads",
         "short_name": "FOI",
         "act_number": "No. 3 of 1982",
         "category": "general",
