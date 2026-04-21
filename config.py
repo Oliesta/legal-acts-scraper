@@ -291,7 +291,7 @@ US_ACTS = [
     },
     {
         "source": "url",
-        "url": "https://www.govinfo.gov/content/pkg/STATUTE-82/pdf/STATUTE-82-Pg572.pdf",
+        "url": "https://www.govinfo.gov/content/pkg/PLAW-90publ448/pdf/PLAW-90publ448.pdf",
         "short_name": "NFIA",
         "act_number": "Pub.L. 90-448",
         "category": "insurance",
