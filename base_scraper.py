@@ -377,27 +377,46 @@ class BaseScraper:
             )
             return None
 
+    def _fetch_html_text(self, config: dict) -> str:
+        """Fetch legislative text from an HTML URL (for sites that don't serve PDFs)."""
+        url = config["url"]
+        try:
+            resp = self.session.get(url, timeout=REQUEST_TIMEOUT)
+            resp.raise_for_status()
+            from bs4 import BeautifulSoup
+            soup = BeautifulSoup(resp.content, "lxml")
+            for tag in soup(["script", "style", "nav", "header", "footer",
+                              "aside", "noscript", "form", "button"]):
+                tag.decompose()
+            return self._clean_pdf_text(soup.get_text(separator="\n", strip=True))
+        except Exception as e:
+            self.errors.append(f"{config['short_name']}: HTML fetch error: {e}")
+            return ""
+
     # ── Main pipeline ───────────────────────────────────────────────
 
     def process_act(self, config: dict) -> Optional[ActSchema]:
         """
         Full pipeline for a single act:
-        1. Get PDF (download or local)
-        2. Extract text
-        3. LLM extracts sections
-        4. LLM extracts metadata (if not provided)
-        5. Validate and return
+        1. Get text (PDF download/local, or HTML fetch)
+        2. LLM extracts sections
+        3. LLM extracts metadata (if not provided)
+        4. Validate and return
         """
-        # Step 1: Get PDF
-        pdf_path = self.get_pdf_path(config)
-        if not pdf_path:
-            return None
+        # Step 1: Get text
+        source = config.get("source", "url")
+        if source == "html":
+            console.print(f"  Fetching HTML text from {config['url'].split('/')[-2]}...")
+            raw_text = self._fetch_html_text(config)
+        else:
+            pdf_path = self.get_pdf_path(config)
+            if not pdf_path:
+                return None
+            console.print(f"  Extracting text from {pdf_path.name}...")
+            raw_text = self.extract_text(pdf_path)
 
-        # Step 2: Extract text
-        console.print(f"  Extracting text from {pdf_path.name}...")
-        raw_text = self.extract_text(pdf_path)
         if not raw_text or len(raw_text) < 200:
-            self.errors.append(f"{config['short_name']}: Could not extract meaningful text from PDF")
+            self.errors.append(f"{config['short_name']}: Could not extract meaningful text")
             return None
         console.print(f"  [dim]Extracted {len(raw_text):,} characters[/dim]")
 
