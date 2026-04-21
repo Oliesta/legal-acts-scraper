@@ -291,7 +291,7 @@ US_ACTS = [
     },
     {
         "source": "url",
-        "url": "https://www.govinfo.gov/content/pkg/PLAW-90publ448/pdf/PLAW-90publ448.pdf",
+        "url": "https://www.fema.gov/sites/default/files/2020-07/national-flood-insurance-act-1968.pdf",
         "short_name": "NFIA",
         "act_number": "Pub.L. 90-448",
         "category": "insurance",
