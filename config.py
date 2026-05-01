@@ -57,12 +57,12 @@ ZA_ACTS = [
     # In Firestore, set isActive: false on the existing IA 18/2017 document.
     {
         "source": "url",
-        "url": "https://www.gov.za/sites/default/files/gcis_document/201409/act37of2002.pdf",
+        "url": "https://www.gov.za/sites/default/files/gcis_document/201409/a37-020.pdf",
         "short_name": "FAIS",
         "act_number": "37 of 2002",
         "category": "insurance",
         "effective_date": "2004-09-30",
-        # Section 7: general duties — must act honestly, fairly, in client’s best interests.
+        # Section 7: general duties — must act honestly, fairly, in client's best interests.
         # Section 8: pre-sale disclosure obligations.
         "target_sections": ["7", "8"],
     },
@@ -103,7 +103,7 @@ ZA_ACTS = [
         # Section 14: right to cooling-off / return of goods.
         # Sections 48-52: unfair, unreasonable or unjust contract terms.
         # Sections 55-56: fixed-term agreements — right to cancel with 20
-        #   business days’ notice; prohibition on excessive penalty fees.
+        #   business days' notice; prohibition on excessive penalty fees.
         "target_sections": ["14", "48", "49", "50", "52", "55", "56"],
     },
     {
@@ -201,8 +201,8 @@ GB_ACTS = [
         "act_number": "2015 c.4",
         "category": "insurance",
         "effective_date": "2016-08-12",
-        # Section 3: insured’s duty of fair presentation.
-        # Section 8: insurer’s remedies for breach of fair presentation duty.
+        # Section 3: insured's duty of fair presentation.
+        # Section 8: insurer's remedies for breach of fair presentation duty.
         # Section 11: warranties — breach suspends cover, does not end policy.
         # Section 14: contracting out — insurer cannot make policy less
         #   favourable than the Act provides.
@@ -284,7 +284,7 @@ GB_ACTS = [
         "act_number": "1985 c.70",
         "category": "rental",
         "effective_date": "1985-10-30",
-        # Section 11: landlord’s repairing obligations (structure, exterior,
+        # Section 11: landlord's repairing obligations (structure, exterior,
         #   installations).
         # Section 17: no contracting out of s.11 obligations.
         "target_sections": ["11", "17"],
@@ -403,7 +403,7 @@ AU_ACTS = [
         # Australian Consumer Law lives in Schedule 2 of the CCA.
         # Section 18: misleading or deceptive conduct — prohibited.
         # Section 23: unfair terms in consumer contracts are void.
-        # Section 24: meaning of “unfair” (significant imbalance test).
+        # Section 24: meaning of "unfair" (significant imbalance test).
         # Section 25: examples of terms that may be unfair.
         # Section 54: goods must be of acceptable quality.
         # Section 60: services must be rendered with due care and skill.
