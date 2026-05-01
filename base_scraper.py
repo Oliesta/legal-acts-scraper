@@ -35,6 +35,18 @@ from schema import ActSchema, SectionSchema
 
 console = Console()
 
+# Maps act category to the ContraSnap document types that act's sections
+# should be injected into. "consumer" acts are the catch-all for gym/phone/
+# lease/other contracts that don't have their own dedicated act category.
+_CATEGORY_TO_DOC_TYPES: dict[str, list[str]] = {
+    "employment": ["employment"],
+    "insurance":  ["insurance"],
+    "consumer":   ["gym", "phone", "lease", "other"],
+    "rental":     ["lease"],
+    "credit":     ["other"],
+    "general":    [],  # universal — included for every document type
+}
+
 
 class BaseScraper:
     """Base class for all country scrapers."""
@@ -52,7 +64,7 @@ class BaseScraper:
         self.results: list[dict] = []
         self.errors: list[str] = []
 
-    # ── PDF acquisition ─────────────────────────────────────────────
+    # ── PDF acquisition ────────────────────────────────────────────────
 
     def get_pdf_path(self, config: dict) -> Optional[Path]:
         """Get path to PDF — download if URL source, validate if file source."""
@@ -117,7 +129,7 @@ class BaseScraper:
         self.errors.append(f"{config['short_name']}: Failed to download after {MAX_RETRIES} attempts")
         return None
 
-    # ── Text extraction ─────────────────────────────────────────────
+    # ── Text extraction ───────────────────────────────────────────────
 
     def extract_text(self, pdf_path: Path) -> str:
         """
@@ -228,7 +240,7 @@ class BaseScraper:
         text = re.sub(r"(?m)^.{0,5}(?:Government Gazette|Staatskoerant).*$", "", text)
         return text.strip()
 
-    # ── Act building ────────────────────────────────────────────────
+    # ── Act building ───────────────────────────────────────────────────
 
     def build_act(
         self,
@@ -266,7 +278,7 @@ class BaseScraper:
             )
             return None
 
-    # ── Main pipeline ───────────────────────────────────────────────
+    # ── Main pipeline ─────────────────────────────────────────────────
 
     def process_act(self, config: dict) -> Optional[ActSchema]:
         """
@@ -274,7 +286,9 @@ class BaseScraper:
         1. Get PDF (download or local)
         2. Extract text
         3. LLM extracts sections
-        4. LLM extracts metadata (if not provided)
+        3b. Filter to target_sections if specified in config
+        3c. Stamp applicableDocumentTypes from category or config
+        4. Extract metadata (if not provided in config)
         5. Validate and return
         """
         # Step 1: Get PDF
@@ -296,6 +310,42 @@ class BaseScraper:
         if not sections:
             self.errors.append(f"{config['short_name']}: LLM found no sections in PDF text")
             return None
+
+        # Step 3b: Filter to target_sections if specified.
+        # Acts like LRA have 200+ sections; we only want the rights-granting
+        # ones (e.g. 185-188) not definitions and procedural provisions.
+        target_sections = config.get("target_sections")
+        if target_sections:
+            target_keys = set()
+            for t in target_sections:
+                m = re.search(r"(\d+)", str(t))
+                if m:
+                    target_keys.add(m.group(1))
+            filtered = [
+                s for s in sections
+                if (m := re.search(r"(\d+)", s["sectionNumber"])) and m.group(1) in target_keys
+            ]
+            console.print(
+                f"  [dim]target_sections filter: kept {len(filtered)}/{len(sections)} section(s) "
+                f"(targets: {', '.join(sorted(target_keys, key=lambda x: int(x)))})[/dim]"
+            )
+            if not filtered:
+                self.errors.append(
+                    f"{config['short_name']}: target_sections filter matched nothing — "
+                    f"verify the section numbers exist in the PDF"
+                )
+                return None
+            sections = filtered
+
+        # Step 3c: Stamp applicableDocumentTypes on every section so the
+        # grounding pipeline routes them to the right contract type rather
+        # than treating them as universal (empty list = applies everywhere).
+        doc_types: list[str] = config.get(
+            "document_types",
+            _CATEGORY_TO_DOC_TYPES.get(config.get("category", ""), []),
+        )
+        for s in sections:
+            s["applicableDocumentTypes"] = doc_types
 
         # Step 4: Extract metadata if needed
         name = config.get("name", "")
