@@ -14,13 +14,14 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import sys
 from pathlib import Path
 
 from rich.console import Console
 from rich.table import Table
 
-from config import COUNTRY_CONFIGS, DEFAULT_MODEL, OUTPUT_DIR
+from config import COUNTRY_CONFIGS, DEFAULT_MODEL, GEMINI_DEFAULT_MODEL, GROQ_DEFAULT_MODEL, OUTPUT_DIR
 from llm_extractor import LLMExtractor
 from scrapers import AUScraper, GBScraper, INScraper, USScraper, ZAScraper
 
@@ -56,20 +57,22 @@ def build_configs_from_folder(
 
     configs = []
     for pdf in pdfs:
-        # Derive short_name from filename
+        # Derive short_name as initials of meaningful words in the filename
         stem = pdf.stem
-        # "insurance_act_18_of_2017" → "IA_18_2017"
-        short = stem.upper()[:10].replace(" ", "_")
+        words = re.split(r"[\s\-_]+", stem)
+        # Take first letter of each word that's not a number and not a stop word
+        stop = {"of", "the", "and", "no", "act", "a", "an"}
+        initials = "".join(
+            w[0].upper() for w in words if w and w.lower() not in stop and not w.isdigit()
+        )
+        short = initials[:6] or stem[:6].upper()
 
         configs.append({
             "source": "file",
             "path": str(pdf),
             "short_name": short,
-            "act_number": "",       # LLM will extract
             "category": category,
-            "effective_date": "",    # LLM will extract
-            "description": "",      # LLM will extract
-            # name left empty — LLM will extract from PDF
+            # act_number, effective_date, description → extracted by LLM
         })
 
     return configs
@@ -110,10 +113,12 @@ def main():
     )
     parser.add_argument("--country", type=str, help="Country code: ZA, GB, US, AU, IN")
     parser.add_argument("--all", action="store_true", help="Scrape all configured countries")
-    parser.add_argument("--model", type=str, default=DEFAULT_MODEL, help=f"Ollama model (default: {DEFAULT_MODEL})")
+    parser.add_argument("--model", type=str, help="Model name (default depends on provider)")
     parser.add_argument("--folder", type=str, help="Folder of PDFs to process")
     parser.add_argument("--category", type=str, default="general", help="Category for --folder mode (default: general)")
     parser.add_argument("--output", type=str, help="Custom output filename")
+    parser.add_argument("--groq", action="store_true", help="Use Groq API instead of Ollama (reads GROQ_API_KEY env var)")
+    parser.add_argument("--gemini", action="store_true", help="Use Google Gemini API (reads GEMINI_API_KEY env var)")
     args = parser.parse_args()
 
     if not args.country and not args.all and not args.folder:
@@ -125,28 +130,57 @@ def main():
         console.print("[red]--folder requires --country[/red]")
         sys.exit(1)
 
-    # Initialize LLM
-    llm = LLMExtractor(model=args.model)
-    console.print(f"[bold cyan]LLM: {args.model}[/bold cyan] (via Ollama)")
+    # Determine provider and API key
+    gemini_api_key = os.environ.get("GEMINI_API_KEY", "")
+    groq_api_key = os.environ.get("GROQ_API_KEY", "")
+    use_gemini = args.gemini or bool(gemini_api_key)
+    use_groq = args.groq or (bool(groq_api_key) and not use_gemini)
 
-    # Test Ollama connectivity
-    try:
-        import requests
-        resp = requests.get("http://localhost:11434/api/tags", timeout=5)
-        models = [m["name"] for m in resp.json().get("models", [])]
-        if args.model not in models and f"{args.model}:latest" not in models:
+    if use_gemini:
+        if not gemini_api_key:
             console.print(
-                f"[yellow]Warning: model '{args.model}' not found in Ollama. "
-                f"Available: {', '.join(models) or 'none'}[/yellow]"
+                "[bold red]GEMINI_API_KEY not set.[/bold red]\n"
+                "Get a free key: https://aistudio.google.com/apikey\n"
+                "Then: export GEMINI_API_KEY=AIza..."
             )
-            console.print(f"[yellow]Run: ollama pull {args.model}[/yellow]")
-    except Exception:
-        console.print(
-            "[bold red]Cannot connect to Ollama![/bold red]\n"
-            "Start it with: ollama serve\n"
-            "Then pull a model: ollama pull gemma3"
-        )
-        sys.exit(1)
+            sys.exit(1)
+        model = args.model or GEMINI_DEFAULT_MODEL
+        llm = LLMExtractor(model=model, provider="gemini", api_key=gemini_api_key)
+        console.print(f"[bold cyan]LLM: {model}[/bold cyan] (via Gemini — 1M TPM free tier)")
+    elif use_groq:
+        if not groq_api_key:
+            console.print(
+                "[bold red]GROQ_API_KEY not set.[/bold red]\n"
+                "Export it: export GROQ_API_KEY=gsk_..."
+            )
+            sys.exit(1)
+        model = args.model or GROQ_DEFAULT_MODEL
+        llm = LLMExtractor(model=model, provider="groq", api_key=groq_api_key)
+        console.print(f"[bold cyan]LLM: {model}[/bold cyan] (via Groq)")
+    else:
+        model = args.model or DEFAULT_MODEL
+        llm = LLMExtractor(model=model)
+        console.print(f"[bold cyan]LLM: {model}[/bold cyan] (via Ollama)")
+
+        # Test Ollama connectivity
+        try:
+            import requests
+            resp = requests.get("http://localhost:11434/api/tags", timeout=5)
+            models = [m["name"] for m in resp.json().get("models", [])]
+            if model not in models and f"{model}:latest" not in models:
+                console.print(
+                    f"[yellow]Warning: model '{model}' not found in Ollama. "
+                    f"Available: {', '.join(models) or 'none'}[/yellow]"
+                )
+                console.print(f"[yellow]Run: ollama pull {model}[/yellow]")
+        except Exception:
+            console.print(
+                "[bold red]Cannot connect to Ollama![/bold red]\n"
+                "Start it with: ollama serve\n"
+                "Then pull a model: ollama pull gemma4:e4b\n"
+                "Or use Gemini (recommended): export GEMINI_API_KEY=AIza... then re-run with --gemini"
+            )
+            sys.exit(1)
 
     os.makedirs(OUTPUT_DIR, exist_ok=True)
 
